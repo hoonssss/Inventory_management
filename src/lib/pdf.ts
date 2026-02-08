@@ -23,8 +23,8 @@ export function exportSummaryToPdf(data: StockSummary[]): void {
   doc.text(`Below Target: ${lowStockCount}`, marginLeft, 59);
 
   const startY = 75;
-  const headers = ['Code', 'Initial', 'Target', 'Incoming', 'Sales', 'Current', 'Gap'];
-  const colWidths = [30, 22, 22, 25, 22, 25, 22];
+  const headers = ['Code', 'Name', 'Initial', 'Target', 'Incoming', 'Sales', 'Current', 'Gap'];
+  const colWidths = [22, 32, 18, 18, 22, 18, 22, 18];
 
   const drawTableHeader = (y: number) => {
     doc.setFontSize(9);
@@ -52,6 +52,7 @@ export function exportSummaryToPdf(data: StockSummary[]): void {
     let xPos = marginLeft;
     const values = [
       item.productCode,
+      item.productName || '-',
       String(item.initialStock),
       String(item.targetStock),
       String(item.totalIncoming),

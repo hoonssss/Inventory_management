@@ -66,6 +66,7 @@ export function calculateStockSummary(): StockSummary[] {
 
     return {
       productCode: product.productCode,
+      productName: product.productName,
       initialStock: product.stock,
       targetStock: product.targetStock,
       totalIncoming,

@@ -9,6 +9,7 @@ interface StockTableProps {
 
 type SortKey =
   | 'productCode'
+  | 'productName'
   | 'initialStock'
   | 'targetStock'
   | 'totalIncoming'
@@ -30,7 +31,8 @@ export default function StockTable({ data }: StockTableProps) {
       return data;
     }
     return data.filter((item) =>
-      item.productCode.toLowerCase().includes(normalizedQuery),
+      item.productCode.toLowerCase().includes(normalizedQuery)
+      || item.productName.toLowerCase().includes(normalizedQuery),
     );
   }, [data, normalizedQuery]);
 
@@ -94,7 +96,7 @@ export default function StockTable({ data }: StockTableProps) {
       <div className="px-6 py-4 border-b flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
           <p className="text-lg font-semibold">검색</p>
-          <p className="text-sm text-gray-500">제품코드 기준으로 필터링됩니다.</p>
+          <p className="text-sm text-gray-500">제품코드/제품명 기준으로 필터링됩니다.</p>
         </div>
         <div className="w-full sm:w-72">
           <label className="sr-only" htmlFor="product-search">
@@ -117,6 +119,9 @@ export default function StockTable({ data }: StockTableProps) {
             <tr>
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                 {renderSortLabel('제품코드', 'productCode')}
+              </th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                {renderSortLabel('제품명', 'productName')}
               </th>
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                 {renderSortLabel('초기재고', 'initialStock')}
@@ -146,6 +151,9 @@ export default function StockTable({ data }: StockTableProps) {
                     {item.productCode}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700">
+                    {item.productName || '-'}
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700">
                     {item.initialStock}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700">
@@ -169,7 +177,7 @@ export default function StockTable({ data }: StockTableProps) {
               ))
             ) : (
               <tr>
-                <td colSpan={7} className="px-6 py-10 text-center text-sm text-gray-500">
+                <td colSpan={8} className="px-6 py-10 text-center text-sm text-gray-500">
                   검색 결과가 없습니다.
                 </td>
               </tr>

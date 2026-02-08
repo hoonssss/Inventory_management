@@ -5,9 +5,11 @@ import {
   parseProductsExcel,
   parseSalesExcel,
   parseIncomingExcel,
+  parseWorkbookExcel,
   downloadProductTemplate,
   downloadSalesTemplate,
   downloadIncomingTemplate,
+  downloadFullTemplate,
 } from '@/lib/excel';
 import { setProducts, addSalesRecords, addIncomingRecords } from '@/lib/storage';
 
@@ -15,10 +17,11 @@ interface UploadExcelProps {
   onUploadComplete: () => void;
 }
 
-type UploadType = 'products' | 'sales' | 'incoming';
+type UploadType = 'all' | 'products' | 'sales' | 'incoming';
 
 const uploadConfig = {
-  products: { label: '초기 데이터', columns: '제품코드 / 재고 / 목표재고', template: downloadProductTemplate },
+  all: { label: '전체 업로드', columns: '초기데이터 / 판매내역 / 입고내역 (시트)', template: downloadFullTemplate },
+  products: { label: '초기 데이터', columns: '제품코드 / 제품명 / 재고 / 목표재고', template: downloadProductTemplate },
   sales: { label: '판매내역', columns: '주문시간 / 제품ID / 주문수량', template: downloadSalesTemplate },
   incoming: { label: '입고내역', columns: '입고일자 / 제품코드 / 수량', template: downloadIncomingTemplate },
 };
@@ -36,7 +39,15 @@ export default function UploadExcel({ onUploadComplete }: UploadExcelProps) {
     try {
       let count = 0;
 
-      if (activeTab === 'products') {
+      if (activeTab === 'all') {
+        const { products, sales, incoming } = await parseWorkbookExcel(file);
+        const totalCount = products.length + sales.length + incoming.length;
+        if (totalCount === 0) { setMessage('데이터가 없습니다.'); setIsError(true); return; }
+        if (products.length > 0) setProducts(products);
+        if (sales.length > 0) addSalesRecords(sales);
+        if (incoming.length > 0) addIncomingRecords(incoming);
+        count = totalCount;
+      } else if (activeTab === 'products') {
         const data = await parseProductsExcel(file);
         if (data.length === 0) { setMessage('데이터가 없습니다.'); setIsError(true); return; }
         setProducts(data);

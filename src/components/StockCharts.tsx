@@ -14,7 +14,7 @@ interface StockChartsProps {
 
 export default function StockCharts({ summaryData, salesData, incomingData }: StockChartsProps) {
   const barData = summaryData.map((d) => ({
-    name: d.productCode,
+    name: d.productName ? `${d.productCode} (${d.productName})` : d.productCode,
     currentStock: d.currentStock,
     targetStock: d.targetStock,
   }));
@@ -37,7 +37,7 @@ export default function StockCharts({ summaryData, salesData, incomingData }: St
     .map(([date, val]) => ({ date, ...val }));
 
   const gapData = summaryData.map((d) => ({
-    name: d.productCode,
+    name: d.productName ? `${d.productCode} (${d.productName})` : d.productCode,
     gap: d.gap,
   }));
 

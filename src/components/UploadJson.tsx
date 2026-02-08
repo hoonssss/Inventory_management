@@ -11,7 +11,7 @@ interface UploadJsonProps {
 type UploadType = 'products' | 'sales' | 'incoming';
 
 const uploadConfig = {
-  products: { label: '초기 데이터', desc: '{ productCode, stock, targetStock }' },
+  products: { label: '초기 데이터', desc: '{ productCode, productName, stock, targetStock }' },
   sales: { label: '판매내역', desc: '{ orderTime, productId, orderQuantity }' },
   incoming: { label: '입고내역', desc: '{ incomingDate, productCode, quantity }' },
 };
