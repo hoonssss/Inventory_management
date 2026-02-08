@@ -1,23 +1,25 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { getStockData, getTransactionLog } from '@/lib/storage';
-import { StockItem, TransactionLog } from '@/types/stock';
+import { calculateStockSummary, getSalesRecords, getIncomingRecords } from '@/lib/storage';
+import { StockSummary, SalesRecord, IncomingRecord } from '@/types/stock';
 import StockCharts from '@/components/StockCharts';
 
 export default function ChartsPage() {
-  const [stockData, setLocalStock] = useState<StockItem[]>([]);
-  const [transactionLog, setTransactionLog] = useState<TransactionLog[]>([]);
+  const [summary, setSummary] = useState<StockSummary[]>([]);
+  const [sales, setSales] = useState<SalesRecord[]>([]);
+  const [incoming, setIncoming] = useState<IncomingRecord[]>([]);
 
   useEffect(() => {
-    setLocalStock(getStockData());
-    setTransactionLog(getTransactionLog());
+    setSummary(calculateStockSummary());
+    setSales(getSalesRecords());
+    setIncoming(getIncomingRecords());
   }, []);
 
   return (
     <div className="space-y-6">
       <h1 className="text-2xl font-bold text-gray-900">데이터 시각화</h1>
-      <StockCharts stockData={stockData} transactionLog={transactionLog} />
+      <StockCharts summaryData={summary} salesData={sales} incomingData={incoming} />
     </div>
   );
 }

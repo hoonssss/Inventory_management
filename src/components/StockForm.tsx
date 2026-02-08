@@ -1,57 +1,47 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { StockItem } from '@/types/stock';
+import { Product } from '@/types/stock';
 
 interface StockFormProps {
-  editItem?: StockItem | null;
-  onSubmit: (item: StockItem) => void;
+  editItem?: Product | null;
+  onSubmit: (item: Product) => void;
   onCancel?: () => void;
 }
 
 export default function StockForm({ editItem, onSubmit, onCancel }: StockFormProps) {
-  const [productId, setProductId] = useState('');
-  const [productName, setProductName] = useState('');
-  const [category, setCategory] = useState('');
+  const [productCode, setProductCode] = useState('');
   const [stock, setStock] = useState<number>(0);
+  const [targetStock, setTargetStock] = useState<number>(0);
 
   useEffect(() => {
     if (editItem) {
-      setProductId(editItem.productId);
-      setProductName(editItem.productName);
-      setCategory(editItem.category);
+      setProductCode(editItem.productCode);
       setStock(editItem.stock);
+      setTargetStock(editItem.targetStock);
     } else {
       resetForm();
     }
   }, [editItem]);
 
   const resetForm = () => {
-    setProductId('');
-    setProductName('');
-    setCategory('');
+    setProductCode('');
     setStock(0);
+    setTargetStock(0);
   };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (!productId.trim() || !productName.trim() || !category.trim()) {
-      alert('모든 필드를 입력해주세요.');
-      return;
-    }
-
-    if (stock < 0) {
-      alert('재고 수량은 0 이상이어야 합니다.');
+    if (!productCode.trim()) {
+      alert('제품코드를 입력해주세요.');
       return;
     }
 
     onSubmit({
-      productId: productId.trim(),
-      productName: productName.trim(),
-      category: category.trim(),
+      productCode: productCode.trim(),
       stock,
-      updatedAt: new Date().toISOString().split('T')[0],
+      targetStock,
     });
 
     if (!editItem) resetForm();
@@ -60,54 +50,36 @@ export default function StockForm({ editItem, onSubmit, onCancel }: StockFormPro
   return (
     <form onSubmit={handleSubmit} className="bg-white rounded-lg shadow p-6">
       <h3 className="text-lg font-semibold mb-4">
-        {editItem ? '재고 수정' : '재고 추가'}
+        {editItem ? '제품 수정' : '제품 추가'}
       </h3>
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">
-            상품 ID
-          </label>
+          <label className="block text-sm font-medium text-gray-700 mb-1">제품코드</label>
           <input
             type="text"
-            value={productId}
-            onChange={(e) => setProductId(e.target.value)}
+            value={productCode}
+            onChange={(e) => setProductCode(e.target.value)}
             disabled={!!editItem}
             placeholder="예: PROD-001"
             className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:bg-gray-100 disabled:text-gray-500"
           />
         </div>
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">
-            상품명
-          </label>
-          <input
-            type="text"
-            value={productName}
-            onChange={(e) => setProductName(e.target.value)}
-            placeholder="예: 에티오피아 예가체프"
-            className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-          />
-        </div>
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">
-            카테고리
-          </label>
-          <input
-            type="text"
-            value={category}
-            onChange={(e) => setCategory(e.target.value)}
-            placeholder="예: 원두"
-            className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-          />
-        </div>
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">
-            재고 수량
-          </label>
+          <label className="block text-sm font-medium text-gray-700 mb-1">재고</label>
           <input
             type="number"
             value={stock}
             onChange={(e) => setStock(Number(e.target.value))}
+            min={0}
+            className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+          />
+        </div>
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1">목표재고</label>
+          <input
+            type="number"
+            value={targetStock}
+            onChange={(e) => setTargetStock(Number(e.target.value))}
             min={0}
             className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
           />

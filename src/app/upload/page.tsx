@@ -3,17 +3,16 @@
 import { useState } from 'react';
 import UploadExcel from '@/components/UploadExcel';
 import UploadJson from '@/components/UploadJson';
-import { getStockData } from '@/lib/storage';
+import { calculateStockSummary } from '@/lib/storage';
 import StockTable from '@/components/StockTable';
-import { StockItem } from '@/types/stock';
+import { StockSummary } from '@/types/stock';
 
 export default function UploadPage() {
-  const [stockData, setLocalStock] = useState<StockItem[]>([]);
+  const [summary, setSummary] = useState<StockSummary[]>([]);
   const [showPreview, setShowPreview] = useState(false);
 
   const handleUploadComplete = () => {
-    const data = getStockData();
-    setLocalStock(data);
+    setSummary(calculateStockSummary());
     setShowPreview(true);
   };
 
@@ -26,12 +25,12 @@ export default function UploadPage() {
         <UploadJson onUploadComplete={handleUploadComplete} />
       </div>
 
-      {showPreview && stockData.length > 0 && (
+      {showPreview && summary.length > 0 && (
         <div className="bg-white rounded-lg shadow">
           <div className="px-6 py-4 border-b">
             <h2 className="text-lg font-semibold">업로드 후 재고 현황</h2>
           </div>
-          <StockTable data={stockData} />
+          <StockTable data={summary} />
         </div>
       )}
     </div>

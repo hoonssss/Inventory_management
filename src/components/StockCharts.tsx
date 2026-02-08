@@ -1,88 +1,50 @@
 'use client';
 
 import {
-  PieChart, Pie, Cell, Tooltip, Legend, ResponsiveContainer,
-  BarChart, Bar, XAxis, YAxis, CartesianGrid,
+  BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer,
   LineChart, Line,
 } from 'recharts';
-import { StockItem, TransactionLog } from '@/types/stock';
-
-const COLORS = ['#3B82F6', '#10B981', '#F59E0B', '#EF4444', '#8B5CF6', '#EC4899', '#06B6D4', '#84CC16'];
+import { StockSummary, SalesRecord, IncomingRecord } from '@/types/stock';
 
 interface StockChartsProps {
-  stockData: StockItem[];
-  transactionLog: TransactionLog[];
+  summaryData: StockSummary[];
+  salesData: SalesRecord[];
+  incomingData: IncomingRecord[];
 }
 
-export default function StockCharts({ stockData, transactionLog }: StockChartsProps) {
-  // Category-based pie chart data
-  const categoryMap = new Map<string, number>();
-  stockData.forEach((item) => {
-    const current = categoryMap.get(item.category) || 0;
-    categoryMap.set(item.category, current + item.stock);
+export default function StockCharts({ summaryData, salesData, incomingData }: StockChartsProps) {
+  const barData = summaryData.map((d) => ({
+    name: d.productCode,
+    currentStock: d.currentStock,
+    targetStock: d.targetStock,
+  }));
+
+  const dateMap = new Map<string, { incoming: number; sales: number }>();
+  incomingData.forEach((r) => {
+    const date = r.incomingDate.split(' ')[0];
+    const existing = dateMap.get(date) || { incoming: 0, sales: 0 };
+    existing.incoming += r.quantity;
+    dateMap.set(date, existing);
   });
-  const pieData = Array.from(categoryMap.entries()).map(([name, value]) => ({
-    name,
-    value,
-  }));
-
-  // Product-based bar chart data
-  const barData = stockData.map((item) => ({
-    name: item.productName,
-    stock: item.stock,
-  }));
-
-  // Transaction trend line chart data
-  const dateMap = new Map<string, { in: number; out: number }>();
-  transactionLog.forEach((log) => {
-    const existing = dateMap.get(log.date) || { in: 0, out: 0 };
-    if (log.type === 'IN') {
-      existing.in += log.quantity;
-    } else {
-      existing.out += log.quantity;
-    }
-    dateMap.set(log.date, existing);
+  salesData.forEach((r) => {
+    const date = r.orderTime.split(' ')[0];
+    const existing = dateMap.get(date) || { incoming: 0, sales: 0 };
+    existing.sales += r.orderQuantity;
+    dateMap.set(date, existing);
   });
   const lineData = Array.from(dateMap.entries())
     .sort(([a], [b]) => a.localeCompare(b))
-    .map(([date, val]) => ({
-      date,
-      ...val,
-    }));
+    .map(([date, val]) => ({ date, ...val }));
+
+  const gapData = summaryData.map((d) => ({
+    name: d.productCode,
+    gap: d.gap,
+  }));
 
   return (
     <div className="space-y-8">
-      {/* Pie Chart - Category Distribution */}
       <div className="bg-white rounded-lg shadow p-6">
-        <h3 className="text-lg font-semibold mb-4">카테고리별 재고 비율</h3>
-        {pieData.length > 0 ? (
-          <ResponsiveContainer width="100%" height={300}>
-            <PieChart>
-              <Pie
-                data={pieData}
-                cx="50%"
-                cy="50%"
-                labelLine={false}
-                label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
-                outerRadius={100}
-                dataKey="value"
-              >
-                {pieData.map((_, index) => (
-                  <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                ))}
-              </Pie>
-              <Tooltip />
-              <Legend />
-            </PieChart>
-          </ResponsiveContainer>
-        ) : (
-          <p className="text-gray-500 text-center py-8">데이터가 없습니다.</p>
-        )}
-      </div>
-
-      {/* Bar Chart - Stock per Product */}
-      <div className="bg-white rounded-lg shadow p-6">
-        <h3 className="text-lg font-semibold mb-4">상품별 재고 수량</h3>
+        <h3 className="text-lg font-semibold mb-4">제품별 현재재고 vs 목표재고</h3>
         {barData.length > 0 ? (
           <ResponsiveContainer width="100%" height={300}>
             <BarChart data={barData}>
@@ -90,7 +52,9 @@ export default function StockCharts({ stockData, transactionLog }: StockChartsPr
               <XAxis dataKey="name" />
               <YAxis />
               <Tooltip />
-              <Bar dataKey="stock" fill="#3B82F6" />
+              <Legend />
+              <Bar dataKey="currentStock" fill="#3B82F6" name="현재재고" />
+              <Bar dataKey="targetStock" fill="#E5E7EB" name="목표재고" />
             </BarChart>
           </ResponsiveContainer>
         ) : (
@@ -98,9 +62,8 @@ export default function StockCharts({ stockData, transactionLog }: StockChartsPr
         )}
       </div>
 
-      {/* Line Chart - Transaction Trends */}
       <div className="bg-white rounded-lg shadow p-6">
-        <h3 className="text-lg font-semibold mb-4">입고 / 출고 추이</h3>
+        <h3 className="text-lg font-semibold mb-4">입고 / 판매 추이</h3>
         {lineData.length > 0 ? (
           <ResponsiveContainer width="100%" height={300}>
             <LineChart data={lineData}>
@@ -109,12 +72,29 @@ export default function StockCharts({ stockData, transactionLog }: StockChartsPr
               <YAxis />
               <Tooltip />
               <Legend />
-              <Line type="monotone" dataKey="in" stroke="#10B981" name="입고" strokeWidth={2} />
-              <Line type="monotone" dataKey="out" stroke="#EF4444" name="출고" strokeWidth={2} />
+              <Line type="monotone" dataKey="incoming" stroke="#10B981" name="입고" strokeWidth={2} />
+              <Line type="monotone" dataKey="sales" stroke="#F59E0B" name="판매" strokeWidth={2} />
             </LineChart>
           </ResponsiveContainer>
         ) : (
           <p className="text-gray-500 text-center py-8">거래 기록이 없습니다.</p>
+        )}
+      </div>
+
+      <div className="bg-white rounded-lg shadow p-6">
+        <h3 className="text-lg font-semibold mb-4">제품별 과부족 (현재 - 목표)</h3>
+        {gapData.length > 0 ? (
+          <ResponsiveContainer width="100%" height={300}>
+            <BarChart data={gapData}>
+              <CartesianGrid strokeDasharray="3 3" />
+              <XAxis dataKey="name" />
+              <YAxis />
+              <Tooltip />
+              <Bar dataKey="gap" name="과부족" fill="#8B5CF6" />
+            </BarChart>
+          </ResponsiveContainer>
+        ) : (
+          <p className="text-gray-500 text-center py-8">데이터가 없습니다.</p>
         )}
       </div>
     </div>
