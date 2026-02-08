@@ -9,6 +9,7 @@ export const metadata: Metadata = {
 
 const navItems = [
   { href: '/', label: '대시보드' },
+  { href: '/settings', label: '재고설정' },
   { href: '/upload', label: '업로드' },
   { href: '/export', label: '내보내기' },
   { href: '/charts', label: '시각화' },

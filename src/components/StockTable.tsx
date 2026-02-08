@@ -5,9 +5,10 @@ import { StockItem } from '@/types/stock';
 interface StockTableProps {
   data: StockItem[];
   onDelete?: (productId: string) => void;
+  onEdit?: (item: StockItem) => void;
 }
 
-export default function StockTable({ data, onDelete }: StockTableProps) {
+export default function StockTable({ data, onDelete, onEdit }: StockTableProps) {
   if (data.length === 0) {
     return (
       <div className="text-center py-12 text-gray-500">
@@ -36,7 +37,7 @@ export default function StockTable({ data, onDelete }: StockTableProps) {
             <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
               최종 수정일
             </th>
-            {onDelete && (
+            {(onDelete || onEdit) && (
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                 작업
               </th>
@@ -65,14 +66,24 @@ export default function StockTable({ data, onDelete }: StockTableProps) {
               <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                 {item.updatedAt}
               </td>
-              {onDelete && (
-                <td className="px-6 py-4 whitespace-nowrap text-sm">
-                  <button
-                    onClick={() => onDelete(item.productId)}
-                    className="text-red-600 hover:text-red-900"
-                  >
-                    삭제
-                  </button>
+              {(onDelete || onEdit) && (
+                <td className="px-6 py-4 whitespace-nowrap text-sm space-x-3">
+                  {onEdit && (
+                    <button
+                      onClick={() => onEdit(item)}
+                      className="text-blue-600 hover:text-blue-900"
+                    >
+                      수정
+                    </button>
+                  )}
+                  {onDelete && (
+                    <button
+                      onClick={() => onDelete(item.productId)}
+                      className="text-red-600 hover:text-red-900"
+                    >
+                      삭제
+                    </button>
+                  )}
                 </td>
               )}
             </tr>
