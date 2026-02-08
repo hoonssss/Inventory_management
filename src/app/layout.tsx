@@ -19,7 +19,7 @@ export const metadata: Metadata = {
     '재고분석',
   ],
   verification: {
-    google: 'ioKFLSQ8pbPobMGfmI9BAQ-2nU837hNXOHWS30neCYM',
+    google: '1HXN1G0ZGXioNS41SLHPyElexC_46Lh1NyaMYt4uaew',
     other: {
       'naver-site-verification': '89dae5c739b0b23c7643b2f0f52ee9bb094a41ba',
     },
