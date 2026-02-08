@@ -14,6 +14,7 @@ export default function StockForm({ editItem, onSubmit, onCancel }: StockFormPro
   const [productName, setProductName] = useState('');
   const [stock, setStock] = useState<number>(0);
   const [targetStock, setTargetStock] = useState<number>(0);
+  const [memo, setMemo] = useState('');
 
   useEffect(() => {
     if (editItem) {
@@ -21,6 +22,7 @@ export default function StockForm({ editItem, onSubmit, onCancel }: StockFormPro
       setProductName(editItem.productName || '');
       setStock(editItem.stock);
       setTargetStock(editItem.targetStock);
+      setMemo(editItem.memo || '');
     } else {
       resetForm();
     }
@@ -31,6 +33,7 @@ export default function StockForm({ editItem, onSubmit, onCancel }: StockFormPro
     setProductName('');
     setStock(0);
     setTargetStock(0);
+    setMemo('');
   };
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -46,6 +49,7 @@ export default function StockForm({ editItem, onSubmit, onCancel }: StockFormPro
       productName: productName.trim(),
       stock,
       targetStock,
+      memo: memo.trim(),
     });
 
     if (!editItem) resetForm();
@@ -95,6 +99,16 @@ export default function StockForm({ editItem, onSubmit, onCancel }: StockFormPro
             value={targetStock}
             onChange={(e) => setTargetStock(Number(e.target.value))}
             min={0}
+            className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+          />
+        </div>
+        <div className="md:col-span-4">
+          <label className="block text-sm font-medium text-gray-700 mb-1">메모</label>
+          <textarea
+            value={memo}
+            onChange={(e) => setMemo(e.target.value)}
+            placeholder="거래처 정보, 특이사항 등"
+            rows={2}
             className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
           />
         </div>

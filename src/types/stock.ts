@@ -4,6 +4,7 @@ export interface Product {
   productName: string;
   stock: number;
   targetStock: number;
+  memo?: string;
 }
 
 // 판매내역

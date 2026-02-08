@@ -48,7 +48,8 @@ export default function GuidePage() {
                 <tr><td className="px-4 py-2 border-b">제품코드</td><td className="px-4 py-2 border-b">고유 제품 식별코드</td><td className="px-4 py-2 border-b text-gray-500">PROD-001</td></tr>
                 <tr><td className="px-4 py-2 border-b">제품명</td><td className="px-4 py-2 border-b">제품 이름</td><td className="px-4 py-2 border-b text-gray-500">샘플 제품</td></tr>
                 <tr><td className="px-4 py-2 border-b">재고</td><td className="px-4 py-2 border-b">초기 입력 재고 수량</td><td className="px-4 py-2 border-b text-gray-500">100</td></tr>
-                <tr><td className="px-4 py-2">목표재고</td><td className="px-4 py-2">유지하고자 하는 목표 수량</td><td className="px-4 py-2 text-gray-500">150</td></tr>
+                <tr><td className="px-4 py-2 border-b">목표재고</td><td className="px-4 py-2 border-b">유지하고자 하는 목표 수량</td><td className="px-4 py-2 border-b text-gray-500">150</td></tr>
+                <tr><td className="px-4 py-2">메모</td><td className="px-4 py-2">거래처 정보 등 참고 메모</td><td className="px-4 py-2 text-gray-500">VIP 거래처</td></tr>
               </tbody>
             </table>
           </div>

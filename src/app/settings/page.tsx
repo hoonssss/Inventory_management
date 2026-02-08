@@ -153,6 +153,7 @@ export default function SettingsPage() {
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">제품명</th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">재고</th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">목표재고</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">메모</th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">작업</th>
                 </tr>
               </thead>
@@ -163,6 +164,7 @@ export default function SettingsPage() {
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700">{p.productName || '-'}</td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700">{p.stock}</td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700">{p.targetStock}</td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700">{p.memo || '-'}</td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm space-x-3">
                       <button onClick={() => handleEdit(p)} className="text-blue-600 hover:text-blue-900">수정</button>
                       <button onClick={() => handleDelete(p.productCode)} className="text-red-600 hover:text-red-900">삭제</button>

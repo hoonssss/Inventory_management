@@ -8,6 +8,7 @@ export function parseProductsExcel(file: File): Promise<Product[]> {
     productName: String(row['제품명'] || ''),
     stock: Number(row['재고'] || 0),
     targetStock: Number(row['목표재고'] || 0),
+    memo: String(row['메모'] || ''),
   }));
 }
 
@@ -43,6 +44,7 @@ export async function parseWorkbookExcel(file: File): Promise<{
       productName: String(row['제품명'] || ''),
       stock: Number(row['재고'] || 0),
       targetStock: Number(row['목표재고'] || 0),
+      memo: String(row['메모'] || ''),
     })),
     sales: salesRows.map((row) => ({
       orderTime: normalizeExcelDate(row['주문시간']),
@@ -140,7 +142,7 @@ function sheetToJson(workbook: XLSX.WorkBook, sheetName: string): Record<string,
 
 // --- 엑셀 템플릿 다운로드 ---
 export function downloadProductTemplate(): void {
-  const data = [{ '제품코드': 'PROD-001', '제품명': '샘플 제품', '재고': 100, '목표재고': 150 }];
+  const data = [{ '제품코드': 'PROD-001', '제품명': '샘플 제품', '재고': 100, '목표재고': 150, '메모': '거래처 정보 메모' }];
   downloadTemplate(data, '초기데이터_템플릿.xlsx', '초기데이터');
 }
 
@@ -155,7 +157,7 @@ export function downloadIncomingTemplate(): void {
 }
 
 export function downloadFullTemplate(): void {
-  const productRows = [{ '제품코드': 'PROD-001', '제품명': '샘플 제품', '재고': 100, '목표재고': 150 }];
+  const productRows = [{ '제품코드': 'PROD-001', '제품명': '샘플 제품', '재고': 100, '목표재고': 150, '메모': '거래처 정보 메모' }];
   const salesRows = [{ '주문시간': '2026-02-08 14:30', '제품ID': 'PROD-001', '주문수량': 5 }];
   const incomingRows = [{ '입고일자': '2026-02-08', '제품코드': 'PROD-001', '수량': 50 }];
 

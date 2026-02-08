@@ -1,6 +1,6 @@
 'use client';
 
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { StockSummary } from '@/types/stock';
 
 interface StockTableProps {
@@ -18,11 +18,15 @@ type SortKey =
   | 'gap';
 
 type SortDirection = 'asc' | 'desc';
+type AbcGrade = 'A' | 'B' | 'C';
+type SortPreset = 'default' | 'shortage' | 'sales';
 
 export default function StockTable({ data }: StockTableProps) {
   const [searchQuery, setSearchQuery] = useState('');
   const [sortKey, setSortKey] = useState<SortKey>('productCode');
   const [sortDirection, setSortDirection] = useState<SortDirection>('asc');
+  const [abcFilter, setAbcFilter] = useState<AbcGrade | 'all'>('all');
+  const [sortPreset, setSortPreset] = useState<SortPreset>('default');
 
   const normalizedQuery = searchQuery.trim().toLowerCase();
 
@@ -36,8 +40,27 @@ export default function StockTable({ data }: StockTableProps) {
     );
   }, [data, normalizedQuery]);
 
+  const abcGrades = useMemo(() => {
+    const totalSalesSum = data.reduce((sum, item) => sum + item.totalSales, 0) || 1;
+    const sortedBySales = [...data].sort((a, b) => b.totalSales - a.totalSales);
+    let cumulative = 0;
+    const gradeMap = new Map<string, AbcGrade>();
+    sortedBySales.forEach((item) => {
+      cumulative += item.totalSales;
+      const ratio = cumulative / totalSalesSum;
+      const grade: AbcGrade = ratio <= 0.7 ? 'A' : ratio <= 0.9 ? 'B' : 'C';
+      gradeMap.set(item.productCode, grade);
+    });
+    return gradeMap;
+  }, [data]);
+
+  const abcFilteredData = useMemo(() => {
+    if (abcFilter === 'all') return filteredData;
+    return filteredData.filter((item) => abcGrades.get(item.productCode) === abcFilter);
+  }, [abcFilter, filteredData, abcGrades]);
+
   const sortedData = useMemo(() => {
-    const sorted = [...filteredData];
+    const sorted = [...abcFilteredData];
     const directionFactor = sortDirection === 'asc' ? 1 : -1;
 
     sorted.sort((a, b) => {
@@ -52,7 +75,19 @@ export default function StockTable({ data }: StockTableProps) {
     });
 
     return sorted;
-  }, [filteredData, sortDirection, sortKey]);
+  }, [abcFilteredData, sortDirection, sortKey]);
+
+  useEffect(() => {
+    if (sortPreset === 'default') return;
+    if (sortPreset === 'shortage') {
+      setSortKey('gap');
+      setSortDirection('asc');
+    }
+    if (sortPreset === 'sales') {
+      setSortKey('totalSales');
+      setSortDirection('desc');
+    }
+  }, [sortPreset]);
 
   const handleSort = (key: SortKey) => {
     if (sortKey === key) {
@@ -93,10 +128,37 @@ export default function StockTable({ data }: StockTableProps) {
 
   return (
     <div className="space-y-4">
-      <div className="px-6 py-4 border-b flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+      <div className="px-6 py-4 border-b flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
         <div>
           <p className="text-lg font-semibold">검색</p>
           <p className="text-sm text-gray-500">제품코드/제품명 기준으로 필터링됩니다.</p>
+        </div>
+        <div className="grid w-full gap-3 sm:grid-cols-2 lg:max-w-xl">
+          <div>
+            <label className="block text-xs font-medium text-gray-500 mb-1">정렬 프리셋</label>
+            <select
+              value={sortPreset}
+              onChange={(event) => setSortPreset(event.target.value as SortPreset)}
+              className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm text-gray-900 shadow-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-200"
+            >
+              <option value="default">기본</option>
+              <option value="shortage">재고 부족순</option>
+              <option value="sales">판매량순</option>
+            </select>
+          </div>
+          <div>
+            <label className="block text-xs font-medium text-gray-500 mb-1">ABC 등급</label>
+            <select
+              value={abcFilter}
+              onChange={(event) => setAbcFilter(event.target.value as AbcGrade | 'all')}
+              className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm text-gray-900 shadow-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-200"
+            >
+              <option value="all">전체</option>
+              <option value="A">A (상위 70%)</option>
+              <option value="B">B (다음 20%)</option>
+              <option value="C">C (하위 10%)</option>
+            </select>
+          </div>
         </div>
         <div className="w-full sm:w-72">
           <label className="sr-only" htmlFor="product-search">
