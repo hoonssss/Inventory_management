@@ -91,10 +91,10 @@ export default function StockTable({ data }: StockTableProps) {
 
   return (
     <div className="space-y-4">
-      <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+      <div className="px-6 py-4 border-b flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <p className="text-sm font-medium text-gray-700">검색</p>
-          <p className="text-xs text-gray-500">제품코드 기준으로 필터링됩니다.</p>
+          <p className="text-lg font-semibold">검색</p>
+          <p className="text-sm text-gray-500">제품코드 기준으로 필터링됩니다.</p>
         </div>
         <div className="w-full sm:w-72">
           <label className="sr-only" htmlFor="product-search">
