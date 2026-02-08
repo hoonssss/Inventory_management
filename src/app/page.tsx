@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useState, useCallback } from 'react';
 import { calculateStockSummary, getSalesRecords, getIncomingRecords } from '@/lib/storage';
 import { StockSummary, SalesRecord, IncomingRecord } from '@/types/stock';
 import StockTable from '@/components/StockTable';
@@ -24,7 +24,7 @@ export default function DashboardPage() {
   const [incomingCount, setIncomingCount] = useState(0);
   const [search, setSearch] = useState('');
 
-  useEffect(() => {
+  const loadData = useCallback(() => {
     setSummary(calculateStockSummary());
     const salesData = getSalesRecords();
     const incomingData = getIncomingRecords();
@@ -33,6 +33,10 @@ export default function DashboardPage() {
     setSalesCount(salesData.length);
     setIncomingCount(incomingData.length);
   }, []);
+
+  useEffect(() => {
+    loadData();
+  }, [loadData]);
 
   const totalProducts = summary.length;
   const totalCurrentStock = summary.reduce((sum, d) => sum + d.currentStock, 0);
@@ -89,34 +93,42 @@ export default function DashboardPage() {
     <div className="space-y-6">
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <h1 className="text-2xl font-bold text-gray-900">대시보드</h1>
-        <Link
-          href="/upload"
-          className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors text-sm font-medium"
-        >
-          데이터 업로드
-        </Link>
+        <div className="flex gap-2">
+          <button
+            onClick={loadData}
+            className="bg-gray-100 text-gray-700 px-4 py-2 rounded-lg hover:bg-gray-200 transition-colors text-sm font-medium"
+          >
+            새로고침
+          </button>
+          <Link
+            href="/upload"
+            className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors text-sm font-medium"
+          >
+            데이터 업로드
+          </Link>
+        </div>
       </div>
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
-        <div className="bg-white rounded-lg shadow p-6">
-          <p className="text-sm text-gray-500">총 제품 수</p>
-          <p className="text-3xl font-bold text-blue-600">{totalProducts}</p>
+      <div className="grid grid-cols-2 lg:grid-cols-5 gap-4">
+        <div className="bg-white rounded-lg shadow p-4 sm:p-6">
+          <p className="text-xs sm:text-sm text-gray-500">총 제품 수</p>
+          <p className="text-2xl sm:text-3xl font-bold text-blue-600">{totalProducts}</p>
         </div>
-        <div className="bg-white rounded-lg shadow p-6">
-          <p className="text-sm text-gray-500">현재 총 재고</p>
-          <p className="text-3xl font-bold text-green-600">{totalCurrentStock}</p>
+        <div className="bg-white rounded-lg shadow p-4 sm:p-6">
+          <p className="text-xs sm:text-sm text-gray-500">현재 총 재고</p>
+          <p className="text-2xl sm:text-3xl font-bold text-green-600">{totalCurrentStock}</p>
         </div>
-        <div className="bg-white rounded-lg shadow p-6">
-          <p className="text-sm text-gray-500">목표 미달</p>
-          <p className="text-3xl font-bold text-red-600">{belowTargetCount}</p>
+        <div className="bg-white rounded-lg shadow p-4 sm:p-6">
+          <p className="text-xs sm:text-sm text-gray-500">목표 미달</p>
+          <p className="text-2xl sm:text-3xl font-bold text-red-600">{belowTargetCount}</p>
         </div>
-        <div className="bg-white rounded-lg shadow p-6">
-          <p className="text-sm text-gray-500">판매 건수</p>
-          <p className="text-3xl font-bold text-orange-500">{salesCount}</p>
+        <div className="bg-white rounded-lg shadow p-4 sm:p-6">
+          <p className="text-xs sm:text-sm text-gray-500">판매 건수</p>
+          <p className="text-2xl sm:text-3xl font-bold text-orange-500">{salesCount}</p>
         </div>
-        <div className="bg-white rounded-lg shadow p-6">
-          <p className="text-sm text-gray-500">입고 건수</p>
-          <p className="text-3xl font-bold text-purple-600">{incomingCount}</p>
+        <div className="col-span-2 lg:col-span-1 bg-white rounded-lg shadow p-4 sm:p-6">
+          <p className="text-xs sm:text-sm text-gray-500">입고 건수</p>
+          <p className="text-2xl sm:text-3xl font-bold text-purple-600">{incomingCount}</p>
         </div>
       </div>
 
