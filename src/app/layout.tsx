@@ -18,6 +18,11 @@ export const metadata: Metadata = {
     '재고엑셀',
     '재고분석',
   ],
+  verification: {
+    other: {
+      'naver-site-verification': '89dae5c739b0b23c7643b2f0f52ee9bb094a41ba',
+    },
+  },
 };
 
 export default function RootLayout({
