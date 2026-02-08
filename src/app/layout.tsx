@@ -5,7 +5,19 @@ import './globals.css';
 
 export const metadata: Metadata = {
   title: '재고관리 시스템',
-  description: '프론트엔드 기반 재고관리 웹 애플리케이션',
+  description:
+    '물류사업, 유통사업, 재고관리, 재고파악, 재고분석, 사입관리까지 지원하는 프론트엔드 기반 재고관리 웹 애플리케이션',
+  keywords: [
+    '물류사업',
+    '유통사업',
+    '재고관리',
+    '재고파악',
+    '재고분석',
+    '사입관리',
+    '재고관리엑셀',
+    '재고엑셀',
+    '재고분석',
+  ],
 };
 
 export default function RootLayout({
