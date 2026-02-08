@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useMemo, useState } from 'react';
-import { getProducts, getSalesRecords, getIncomingRecords, calculateStockSummary } from '@/lib/storage';
+import { getProducts, getSalesRecords, getIncomingRecords, calculateStockSummary, updateProductMemo } from '@/lib/storage';
 import { Product, SalesRecord, IncomingRecord, StockSummary } from '@/types/stock';
 
 interface TimelineEvent {
@@ -16,6 +16,7 @@ export default function ProductDetailPage() {
   const [incoming, setIncoming] = useState<IncomingRecord[]>([]);
   const [summaries, setSummaries] = useState<StockSummary[]>([]);
   const [selectedCode, setSelectedCode] = useState('');
+  const [memoDraft, setMemoDraft] = useState('');
 
   useEffect(() => {
     const p = getProducts();
@@ -48,6 +49,16 @@ export default function ProductDetailPage() {
     if (avgStock <= 0) return null;
     return summary.totalSales / avgStock;
   }, [summary]);
+
+  useEffect(() => {
+    setMemoDraft(selectedProduct?.memo || '');
+  }, [selectedProduct]);
+
+  const handleMemoSave = () => {
+    if (!selectedProduct) return;
+    updateProductMemo(selectedProduct.productCode, memoDraft.trim());
+    setProductsList(getProducts());
+  };
 
   return (
     <div className="space-y-6">
@@ -91,6 +102,29 @@ export default function ProductDetailPage() {
             <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-4">
               <p className="text-xs text-gray-500 dark:text-gray-400">재고 회전율</p>
               <p className="text-xl font-bold text-purple-600">{turnoverRate !== null ? turnoverRate.toFixed(2) : '-'}</p>
+            </div>
+          </div>
+
+          <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
+            <h2 className="text-lg font-semibold mb-2 dark:text-white">제품 메모</h2>
+            <p className="text-sm text-gray-500 dark:text-gray-400 mb-4">
+              거래처 정보, 특이사항 등 참고 메모를 저장하세요.
+            </p>
+            <textarea
+              value={memoDraft}
+              onChange={(e) => setMemoDraft(e.target.value)}
+              rows={4}
+              placeholder="메모를 입력하세요."
+              className="w-full rounded-lg border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white px-3 py-2 text-sm"
+            />
+            <div className="flex justify-end mt-3">
+              <button
+                type="button"
+                onClick={handleMemoSave}
+                className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors text-sm font-medium"
+              >
+                메모 저장
+              </button>
             </div>
           </div>
 

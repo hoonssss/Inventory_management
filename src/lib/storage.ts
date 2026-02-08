@@ -15,6 +15,14 @@ export function setProducts(data: Product[]): void {
   localStorage.setItem(PRODUCTS_KEY, JSON.stringify(data));
 }
 
+export function updateProductMemo(productCode: string, memo: string): void {
+  const products = getProducts();
+  const updated = products.map((product) =>
+    product.productCode === productCode ? { ...product, memo } : product,
+  );
+  setProducts(updated);
+}
+
 // --- 판매내역 ---
 export function getSalesRecords(): SalesRecord[] {
   if (typeof window === 'undefined') return [];
