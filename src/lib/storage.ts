@@ -1,31 +1,84 @@
-import { StockItem, TransactionLog } from '@/types/stock';
+import { Product, SalesRecord, IncomingRecord, StockSummary } from '@/types/stock';
 
-const STOCK_KEY = 'stockData';
-const TRANSACTION_KEY = 'transactionLog';
+const PRODUCTS_KEY = 'products';
+const SALES_KEY = 'salesRecords';
+const INCOMING_KEY = 'incomingRecords';
 
-export function getStockData(): StockItem[] {
+// --- 초기 데이터 (제품 마스터) ---
+export function getProducts(): Product[] {
   if (typeof window === 'undefined') return [];
-  const data = localStorage.getItem(STOCK_KEY);
+  const data = localStorage.getItem(PRODUCTS_KEY);
   return data ? JSON.parse(data) : [];
 }
 
-export function setStockData(data: StockItem[]): void {
-  localStorage.setItem(STOCK_KEY, JSON.stringify(data));
+export function setProducts(data: Product[]): void {
+  localStorage.setItem(PRODUCTS_KEY, JSON.stringify(data));
 }
 
-export function getTransactionLog(): TransactionLog[] {
+// --- 판매내역 ---
+export function getSalesRecords(): SalesRecord[] {
   if (typeof window === 'undefined') return [];
-  const data = localStorage.getItem(TRANSACTION_KEY);
+  const data = localStorage.getItem(SALES_KEY);
   return data ? JSON.parse(data) : [];
 }
 
-export function addTransactionLog(log: TransactionLog): void {
-  const logs = getTransactionLog();
-  logs.push(log);
-  localStorage.setItem(TRANSACTION_KEY, JSON.stringify(logs));
+export function setSalesRecords(data: SalesRecord[]): void {
+  localStorage.setItem(SALES_KEY, JSON.stringify(data));
 }
 
+export function addSalesRecords(records: SalesRecord[]): void {
+  const current = getSalesRecords();
+  setSalesRecords([...current, ...records]);
+}
+
+// --- 입고내역 ---
+export function getIncomingRecords(): IncomingRecord[] {
+  if (typeof window === 'undefined') return [];
+  const data = localStorage.getItem(INCOMING_KEY);
+  return data ? JSON.parse(data) : [];
+}
+
+export function setIncomingRecords(data: IncomingRecord[]): void {
+  localStorage.setItem(INCOMING_KEY, JSON.stringify(data));
+}
+
+export function addIncomingRecords(records: IncomingRecord[]): void {
+  const current = getIncomingRecords();
+  setIncomingRecords([...current, ...records]);
+}
+
+// --- 대시보드용 재고 현황 계산 ---
+export function calculateStockSummary(): StockSummary[] {
+  const products = getProducts();
+  const sales = getSalesRecords();
+  const incoming = getIncomingRecords();
+
+  return products.map((product) => {
+    const totalSales = sales
+      .filter((s) => s.productId === product.productCode)
+      .reduce((sum, s) => sum + s.orderQuantity, 0);
+
+    const totalIncoming = incoming
+      .filter((i) => i.productCode === product.productCode)
+      .reduce((sum, i) => sum + i.quantity, 0);
+
+    const currentStock = product.stock + totalIncoming - totalSales;
+
+    return {
+      productCode: product.productCode,
+      initialStock: product.stock,
+      targetStock: product.targetStock,
+      totalIncoming,
+      totalSales,
+      currentStock,
+      gap: currentStock - product.targetStock,
+    };
+  });
+}
+
+// --- 전체 초기화 ---
 export function clearAllData(): void {
-  localStorage.removeItem(STOCK_KEY);
-  localStorage.removeItem(TRANSACTION_KEY);
+  localStorage.removeItem(PRODUCTS_KEY);
+  localStorage.removeItem(SALES_KEY);
+  localStorage.removeItem(INCOMING_KEY);
 }

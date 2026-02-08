@@ -1,26 +1,41 @@
 import * as XLSX from 'xlsx';
-import { StockItem, StockTransaction } from '@/types/stock';
+import { Product, SalesRecord, IncomingRecord, StockSummary } from '@/types/stock';
 
-export function parseExcelFile(file: File): Promise<StockTransaction[]> {
+// --- 엑셀 파싱 ---
+export function parseProductsExcel(file: File): Promise<Product[]> {
+  return parseExcel<Product>(file, (row) => ({
+    productCode: String(row['제품코드'] || ''),
+    stock: Number(row['재고'] || 0),
+    targetStock: Number(row['목표재고'] || 0),
+  }));
+}
+
+export function parseSalesExcel(file: File): Promise<SalesRecord[]> {
+  return parseExcel<SalesRecord>(file, (row) => ({
+    orderTime: String(row['주문시간'] || ''),
+    productId: String(row['제품ID'] || ''),
+    orderQuantity: Number(row['주문수량'] || 0),
+  }));
+}
+
+export function parseIncomingExcel(file: File): Promise<IncomingRecord[]> {
+  return parseExcel<IncomingRecord>(file, (row) => ({
+    incomingDate: String(row['입고일자'] || ''),
+    productCode: String(row['제품코드'] || ''),
+    quantity: Number(row['수량'] || 0),
+  }));
+}
+
+function parseExcel<T>(file: File, mapper: (row: Record<string, unknown>) => T): Promise<T[]> {
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
     reader.onload = (e) => {
       try {
         const data = new Uint8Array(e.target?.result as ArrayBuffer);
         const workbook = XLSX.read(data, { type: 'array' });
-        const sheetName = workbook.SheetNames[0];
-        const worksheet = workbook.Sheets[sheetName];
+        const worksheet = workbook.Sheets[workbook.SheetNames[0]];
         const jsonData = XLSX.utils.sheet_to_json<Record<string, unknown>>(worksheet);
-
-        const transactions: StockTransaction[] = jsonData.map((row) => ({
-          productId: String(row['productId'] || ''),
-          productName: String(row['productName'] || ''),
-          category: String(row['category'] || ''),
-          quantity: Number(row['quantity'] || 0),
-          type: (String(row['type'] || 'IN').toUpperCase() === 'OUT' ? 'OUT' : 'IN') as 'IN' | 'OUT',
-        }));
-
-        resolve(transactions);
+        resolve(jsonData.map(mapper));
       } catch (error) {
         reject(error);
       }
@@ -30,9 +45,66 @@ export function parseExcelFile(file: File): Promise<StockTransaction[]> {
   });
 }
 
-export function exportToExcel(data: StockItem[], filename: string = 'stock_data.xlsx'): void {
-  const worksheet = XLSX.utils.json_to_sheet(data);
-  const workbook = XLSX.utils.book_new();
-  XLSX.utils.book_append_sheet(workbook, worksheet, '재고현황');
-  XLSX.writeFile(workbook, filename);
+// --- 엑셀 템플릿 다운로드 ---
+export function downloadProductTemplate(): void {
+  const data = [{ '제품코드': 'PROD-001', '재고': 100, '목표재고': 150 }];
+  downloadTemplate(data, '초기데이터_템플릿.xlsx', '초기데이터');
+}
+
+export function downloadSalesTemplate(): void {
+  const data = [{ '주문시간': '2026-02-08 14:30', '제품ID': 'PROD-001', '주문수량': 5 }];
+  downloadTemplate(data, '판매내역_템플릿.xlsx', '판매내역');
+}
+
+export function downloadIncomingTemplate(): void {
+  const data = [{ '입고일자': '2026-02-08', '제품코드': 'PROD-001', '수량': 50 }];
+  downloadTemplate(data, '입고내역_템플릿.xlsx', '입고내역');
+}
+
+function downloadTemplate(data: Record<string, unknown>[], filename: string, sheetName: string): void {
+  const ws = XLSX.utils.json_to_sheet(data);
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, sheetName);
+  XLSX.writeFile(wb, filename);
+}
+
+// --- 엑셀 내보내기 ---
+export function exportSummaryToExcel(data: StockSummary[]): void {
+  const rows = data.map((d) => ({
+    '제품코드': d.productCode,
+    '초기재고': d.initialStock,
+    '목표재고': d.targetStock,
+    '총입고': d.totalIncoming,
+    '총판매': d.totalSales,
+    '현재재고': d.currentStock,
+    '과부족': d.gap,
+  }));
+  const ws = XLSX.utils.json_to_sheet(rows);
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, '재고현황');
+  XLSX.writeFile(wb, '재고현황.xlsx');
+}
+
+export function exportSalesToExcel(data: SalesRecord[]): void {
+  const rows = data.map((d) => ({
+    '주문시간': d.orderTime,
+    '제품ID': d.productId,
+    '주문수량': d.orderQuantity,
+  }));
+  const ws = XLSX.utils.json_to_sheet(rows);
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, '판매내역');
+  XLSX.writeFile(wb, '판매내역.xlsx');
+}
+
+export function exportIncomingToExcel(data: IncomingRecord[]): void {
+  const rows = data.map((d) => ({
+    '입고일자': d.incomingDate,
+    '제품코드': d.productCode,
+    '수량': d.quantity,
+  }));
+  const ws = XLSX.utils.json_to_sheet(rows);
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, '입고내역');
+  XLSX.writeFile(wb, '입고내역.xlsx');
 }

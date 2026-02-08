@@ -1,26 +1,31 @@
-export interface StockItem {
-  productId: string;
-  productName: string;
-  category: string;
+// 초기 데이터 (제품 마스터)
+export interface Product {
+  productCode: string;
   stock: number;
-  updatedAt: string;
+  targetStock: number;
 }
 
-export interface StockTransaction {
+// 판매내역
+export interface SalesRecord {
+  orderTime: string;
   productId: string;
-  productName: string;
-  category: string;
-  quantity: number;
-  type: 'IN' | 'OUT';
-  date?: string;
+  orderQuantity: number;
 }
 
-export interface TransactionLog {
-  id: string;
-  productId: string;
-  productName: string;
-  category: string;
+// 입고내역
+export interface IncomingRecord {
+  incomingDate: string;
+  productCode: string;
   quantity: number;
-  type: 'IN' | 'OUT';
-  date: string;
+}
+
+// 대시보드용 계산된 재고 현황
+export interface StockSummary {
+  productCode: string;
+  initialStock: number;
+  targetStock: number;
+  totalIncoming: number;
+  totalSales: number;
+  currentStock: number;
+  gap: number; // currentStock - targetStock
 }

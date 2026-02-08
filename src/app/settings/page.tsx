@@ -1,85 +1,57 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { getStockData, setStockData, addTransactionLog, clearAllData } from '@/lib/storage';
-import { StockItem } from '@/types/stock';
+import { getProducts, setProducts, clearAllData } from '@/lib/storage';
+import { Product } from '@/types/stock';
 import StockForm from '@/components/StockForm';
-import StockTable from '@/components/StockTable';
 
 export default function SettingsPage() {
-  const [stockData, setLocalStock] = useState<StockItem[]>([]);
-  const [editItem, setEditItem] = useState<StockItem | null>(null);
+  const [products, setLocalProducts] = useState<Product[]>([]);
+  const [editItem, setEditItem] = useState<Product | null>(null);
 
   useEffect(() => {
-    setLocalStock(getStockData());
+    setLocalProducts(getProducts());
   }, []);
 
   const refresh = () => {
-    setLocalStock(getStockData());
+    setLocalProducts(getProducts());
   };
 
-  const handleSubmit = (item: StockItem) => {
-    const current = getStockData();
-    const existingIndex = current.findIndex((s) => s.productId === item.productId);
+  const handleSubmit = (item: Product) => {
+    const current = getProducts();
+    const existingIndex = current.findIndex((p) => p.productCode === item.productCode);
 
     if (editItem) {
-      // 수정
-      const oldItem = current[existingIndex];
-      const diff = item.stock - oldItem.stock;
       current[existingIndex] = item;
-      setStockData(current);
-
-      if (diff !== 0) {
-        addTransactionLog({
-          id: `${Date.now()}-${Math.random().toString(36).slice(2, 9)}`,
-          productId: item.productId,
-          productName: item.productName,
-          category: item.category,
-          quantity: Math.abs(diff),
-          type: diff > 0 ? 'IN' : 'OUT',
-          date: item.updatedAt,
-        });
-      }
-
+      setProducts(current);
       setEditItem(null);
     } else {
-      // 추가
       if (existingIndex !== -1) {
-        alert('이미 존재하는 상품 ID입니다. 수정 버튼을 이용해주세요.');
+        alert('이미 존재하는 제품코드입니다. 수정 버튼을 이용해주세요.');
         return;
       }
       current.push(item);
-      setStockData(current);
-
-      addTransactionLog({
-        id: `${Date.now()}-${Math.random().toString(36).slice(2, 9)}`,
-        productId: item.productId,
-        productName: item.productName,
-        category: item.category,
-        quantity: item.stock,
-        type: 'IN',
-        date: item.updatedAt,
-      });
+      setProducts(current);
     }
 
     refresh();
   };
 
-  const handleEdit = (item: StockItem) => {
-    setEditItem(item);
+  const handleEdit = (product: Product) => {
+    setEditItem(product);
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
-  const handleDelete = (productId: string) => {
-    if (!confirm('정말 이 상품을 삭제하시겠습니까?')) return;
-    const updated = stockData.filter((item) => item.productId !== productId);
-    setStockData(updated);
+  const handleDelete = (productCode: string) => {
+    if (!confirm('정말 이 제품을 삭제하시겠습니까?')) return;
+    const updated = products.filter((p) => p.productCode !== productCode);
+    setProducts(updated);
     refresh();
-    if (editItem?.productId === productId) setEditItem(null);
+    if (editItem?.productCode === productCode) setEditItem(null);
   };
 
   const handleClearAll = () => {
-    if (!confirm('모든 재고 데이터와 거래 기록을 삭제하시겠습니까?\n이 작업은 되돌릴 수 없습니다.')) return;
+    if (!confirm('모든 데이터(제품/판매/입고)를 삭제하시겠습니까?\n이 작업은 되돌릴 수 없습니다.')) return;
     clearAllData();
     setEditItem(null);
     refresh();
@@ -89,21 +61,19 @@ export default function SettingsPage() {
     <div className="space-y-6">
       <h1 className="text-2xl font-bold text-gray-900">재고 설정</h1>
 
-      {/* Stock Form */}
       <StockForm
         editItem={editItem}
         onSubmit={handleSubmit}
         onCancel={() => setEditItem(null)}
       />
 
-      {/* Stock Table */}
       <div className="bg-white rounded-lg shadow">
         <div className="px-6 py-4 border-b flex justify-between items-center">
           <div>
-            <h2 className="text-lg font-semibold">재고 목록</h2>
-            <p className="text-sm text-gray-500">총 {stockData.length}개 상품</p>
+            <h2 className="text-lg font-semibold">제품 목록 (초기 데이터)</h2>
+            <p className="text-sm text-gray-500">총 {products.length}개 제품</p>
           </div>
-          {stockData.length > 0 && (
+          {products.length > 0 && (
             <button
               onClick={handleClearAll}
               className="bg-red-50 text-red-600 px-4 py-2 rounded-lg hover:bg-red-100 transition-colors text-sm font-medium"
@@ -112,7 +82,36 @@ export default function SettingsPage() {
             </button>
           )}
         </div>
-        <StockTable data={stockData} onEdit={handleEdit} onDelete={handleDelete} />
+
+        {products.length === 0 ? (
+          <div className="text-center py-12 text-gray-500">등록된 제품이 없습니다.</div>
+        ) : (
+          <div className="overflow-x-auto">
+            <table className="min-w-full divide-y divide-gray-200">
+              <thead className="bg-gray-50">
+                <tr>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">제품코드</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">재고</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">목표재고</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">작업</th>
+                </tr>
+              </thead>
+              <tbody className="bg-white divide-y divide-gray-200">
+                {products.map((p) => (
+                  <tr key={p.productCode} className="hover:bg-gray-50">
+                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{p.productCode}</td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700">{p.stock}</td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700">{p.targetStock}</td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm space-x-3">
+                      <button onClick={() => handleEdit(p)} className="text-blue-600 hover:text-blue-900">수정</button>
+                      <button onClick={() => handleDelete(p.productCode)} className="text-red-600 hover:text-red-900">삭제</button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
       </div>
     </div>
   );
