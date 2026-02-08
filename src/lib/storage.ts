@@ -77,6 +77,15 @@ export function calculateStockSummary(): StockSummary[] {
   });
 }
 
+// --- 개별 초기화 ---
+export function clearSalesRecords(): void {
+  localStorage.removeItem(SALES_KEY);
+}
+
+export function clearIncomingRecords(): void {
+  localStorage.removeItem(INCOMING_KEY);
+}
+
 // --- 전체 초기화 ---
 export function clearAllData(): void {
   localStorage.removeItem(PRODUCTS_KEY);

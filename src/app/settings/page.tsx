@@ -1,21 +1,37 @@
 'use client';
 
-import { useEffect, useState } from 'react';
-import { getProducts, setProducts, clearAllData } from '@/lib/storage';
+import { useEffect, useMemo, useState } from 'react';
+import { getProducts, setProducts, clearAllData, clearSalesRecords, clearIncomingRecords, getSalesRecords, getIncomingRecords } from '@/lib/storage';
 import { Product } from '@/types/stock';
 import StockForm from '@/components/StockForm';
 
 export default function SettingsPage() {
   const [products, setLocalProducts] = useState<Product[]>([]);
   const [editItem, setEditItem] = useState<Product | null>(null);
+  const [search, setSearch] = useState('');
+  const [salesCount, setSalesCount] = useState(0);
+  const [incomingCount, setIncomingCount] = useState(0);
 
   useEffect(() => {
     setLocalProducts(getProducts());
+    setSalesCount(getSalesRecords().length);
+    setIncomingCount(getIncomingRecords().length);
   }, []);
 
   const refresh = () => {
     setLocalProducts(getProducts());
+    setSalesCount(getSalesRecords().length);
+    setIncomingCount(getIncomingRecords().length);
   };
+
+  const filteredProducts = useMemo(() => {
+    const query = search.trim().toLowerCase();
+    if (!query) return products;
+    return products.filter((p) =>
+      p.productCode.toLowerCase().includes(query)
+      || (p.productName || '').toLowerCase().includes(query),
+    );
+  }, [products, search]);
 
   const handleSubmit = (item: Product) => {
     const current = getProducts();
@@ -57,6 +73,18 @@ export default function SettingsPage() {
     refresh();
   };
 
+  const handleClearSales = () => {
+    if (!confirm(`판매내역 ${salesCount}건을 모두 삭제하시겠습니까?`)) return;
+    clearSalesRecords();
+    refresh();
+  };
+
+  const handleClearIncoming = () => {
+    if (!confirm(`입고내역 ${incomingCount}건을 모두 삭제하시겠습니까?`)) return;
+    clearIncomingRecords();
+    refresh();
+  };
+
   return (
     <div className="space-y-6">
       <h1 className="text-2xl font-bold text-gray-900">재고 설정</h1>
@@ -67,12 +95,24 @@ export default function SettingsPage() {
         onCancel={() => setEditItem(null)}
       />
 
-      <div className="bg-white rounded-lg shadow">
-        <div className="px-6 py-4 border-b flex justify-between items-center">
-          <div>
-            <h2 className="text-lg font-semibold">제품 목록 (초기 데이터)</h2>
-            <p className="text-sm text-gray-500">총 {products.length}개 제품</p>
-          </div>
+      {/* 데이터 관리 */}
+      <div className="bg-white rounded-lg shadow p-6 space-y-4">
+        <h2 className="text-lg font-semibold">데이터 관리</h2>
+        <div className="flex flex-wrap gap-3">
+          <button
+            onClick={handleClearSales}
+            disabled={salesCount === 0}
+            className="bg-orange-50 text-orange-600 px-4 py-2 rounded-lg hover:bg-orange-100 transition-colors text-sm font-medium disabled:opacity-40 disabled:cursor-not-allowed"
+          >
+            판매내역 초기화 ({salesCount}건)
+          </button>
+          <button
+            onClick={handleClearIncoming}
+            disabled={incomingCount === 0}
+            className="bg-purple-50 text-purple-600 px-4 py-2 rounded-lg hover:bg-purple-100 transition-colors text-sm font-medium disabled:opacity-40 disabled:cursor-not-allowed"
+          >
+            입고내역 초기화 ({incomingCount}건)
+          </button>
           {products.length > 0 && (
             <button
               onClick={handleClearAll}
@@ -82,9 +122,28 @@ export default function SettingsPage() {
             </button>
           )}
         </div>
+      </div>
+
+      {/* 제품 목록 */}
+      <div className="bg-white rounded-lg shadow">
+        <div className="px-6 py-4 border-b flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+          <div>
+            <h2 className="text-lg font-semibold">제품 목록 (초기 데이터)</h2>
+            <p className="text-sm text-gray-500">총 {products.length}개 제품</p>
+          </div>
+          <input
+            type="text"
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            placeholder="제품코드/제품명 검색"
+            className="w-full sm:w-64 rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+          />
+        </div>
 
         {products.length === 0 ? (
           <div className="text-center py-12 text-gray-500">등록된 제품이 없습니다.</div>
+        ) : filteredProducts.length === 0 ? (
+          <div className="text-center py-12 text-gray-500">검색 결과가 없습니다.</div>
         ) : (
           <div className="overflow-x-auto">
             <table className="min-w-full divide-y divide-gray-200">
@@ -98,7 +157,7 @@ export default function SettingsPage() {
                 </tr>
               </thead>
               <tbody className="bg-white divide-y divide-gray-200">
-                {products.map((p) => (
+                {filteredProducts.map((p) => (
                   <tr key={p.productCode} className="hover:bg-gray-50">
                     <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{p.productCode}</td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700">{p.productName || '-'}</td>
