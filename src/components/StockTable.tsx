@@ -21,6 +21,7 @@ export default function StockTable({ data }: StockTableProps) {
         <thead className="bg-gray-50">
           <tr>
             <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">제품코드</th>
+            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">제품명</th>
             <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">초기재고</th>
             <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">목표재고</th>
             <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">총입고</th>
@@ -33,6 +34,7 @@ export default function StockTable({ data }: StockTableProps) {
           {data.map((item) => (
             <tr key={item.productCode} className="hover:bg-gray-50">
               <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{item.productCode}</td>
+              <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700">{item.productName || '-'}</td>
               <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700">{item.initialStock}</td>
               <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700">{item.targetStock}</td>
               <td className="px-6 py-4 whitespace-nowrap text-sm text-green-600 font-medium">+{item.totalIncoming}</td>

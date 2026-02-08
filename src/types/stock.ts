@@ -1,6 +1,7 @@
 // 초기 데이터 (제품 마스터)
 export interface Product {
   productCode: string;
+  productName: string;
   stock: number;
   targetStock: number;
 }
@@ -22,6 +23,7 @@ export interface IncomingRecord {
 // 대시보드용 계산된 재고 현황
 export interface StockSummary {
   productCode: string;
+  productName: string;
   initialStock: number;
   targetStock: number;
   totalIncoming: number;

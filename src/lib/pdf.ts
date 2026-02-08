@@ -3,6 +3,10 @@ import { StockSummary } from '@/types/stock';
 
 export function exportSummaryToPdf(data: StockSummary[]): void {
   const doc = new jsPDF();
+  const pageHeight = doc.internal.pageSize.getHeight();
+  const marginLeft = 14;
+  const marginBottom = 12;
+  const tableHeaderY = 20;
 
   const today = new Date().toLocaleDateString('ko-KR');
   const totalProducts = data.length;
@@ -10,35 +14,45 @@ export function exportSummaryToPdf(data: StockSummary[]): void {
   const lowStockCount = data.filter((d) => d.gap < 0).length;
 
   doc.setFontSize(18);
-  doc.text('Stock Summary Report', 14, 22);
+  doc.text('Stock Summary Report', marginLeft, 22);
 
   doc.setFontSize(11);
-  doc.text(`Date: ${today}`, 14, 35);
-  doc.text(`Total Products: ${totalProducts}`, 14, 43);
-  doc.text(`Total Current Stock: ${totalCurrentStock}`, 14, 51);
-  doc.text(`Below Target: ${lowStockCount}`, 14, 59);
+  doc.text(`Date: ${today}`, marginLeft, 35);
+  doc.text(`Total Products: ${totalProducts}`, marginLeft, 43);
+  doc.text(`Total Current Stock: ${totalCurrentStock}`, marginLeft, 51);
+  doc.text(`Below Target: ${lowStockCount}`, marginLeft, 59);
 
   const startY = 75;
-  const headers = ['Code', 'Initial', 'Target', 'Incoming', 'Sales', 'Current', 'Gap'];
-  const colWidths = [30, 22, 22, 25, 22, 25, 22];
+  const headers = ['Code', 'Name', 'Initial', 'Target', 'Incoming', 'Sales', 'Current', 'Gap'];
+  const colWidths = [22, 32, 18, 18, 22, 18, 22, 18];
 
-  doc.setFontSize(9);
-  doc.setFont('helvetica', 'bold');
-  let x = 14;
-  headers.forEach((header, i) => {
-    doc.text(header, x, startY);
-    x += colWidths[i];
-  });
+  const drawTableHeader = (y: number) => {
+    doc.setFontSize(9);
+    doc.setFont('helvetica', 'bold');
+    let x = marginLeft;
+    headers.forEach((header, i) => {
+      doc.text(header, x, y);
+      x += colWidths[i];
+    });
+  };
+
+  drawTableHeader(startY);
 
   doc.setFont('helvetica', 'normal');
   doc.setFontSize(8);
+  let currentY = startY + 8;
   data.forEach((item, index) => {
-    const y = startY + 8 + index * 7;
-    if (y > 280) return;
+    if (currentY > pageHeight - marginBottom) {
+      doc.addPage();
+      currentY = tableHeaderY;
+      drawTableHeader(currentY);
+      currentY += 8;
+    }
 
-    let xPos = 14;
+    let xPos = marginLeft;
     const values = [
       item.productCode,
+      item.productName || '-',
       String(item.initialStock),
       String(item.targetStock),
       String(item.totalIncoming),
@@ -47,9 +61,10 @@ export function exportSummaryToPdf(data: StockSummary[]): void {
       String(item.gap),
     ];
     values.forEach((val, i) => {
-      doc.text(val, xPos, y);
+      doc.text(val, xPos, currentY);
       xPos += colWidths[i];
     });
+    currentY += 7;
   });
 
   doc.save('재고현황_리포트.pdf');

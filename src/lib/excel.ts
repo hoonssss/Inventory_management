@@ -5,6 +5,7 @@ import { Product, SalesRecord, IncomingRecord, StockSummary } from '@/types/stoc
 export function parseProductsExcel(file: File): Promise<Product[]> {
   return parseExcel<Product>(file, (row) => ({
     productCode: String(row['제품코드'] || ''),
+    productName: String(row['제품명'] || ''),
     stock: Number(row['재고'] || 0),
     targetStock: Number(row['목표재고'] || 0),
   }));
@@ -26,6 +27,36 @@ export function parseIncomingExcel(file: File): Promise<IncomingRecord[]> {
   }));
 }
 
+export async function parseWorkbookExcel(file: File): Promise<{
+  products: Product[];
+  sales: SalesRecord[];
+  incoming: IncomingRecord[];
+}> {
+  const workbook = await readWorkbook(file);
+  const productsRows = sheetToJson(workbook, '초기데이터');
+  const salesRows = sheetToJson(workbook, '판매내역');
+  const incomingRows = sheetToJson(workbook, '입고내역');
+
+  return {
+    products: productsRows.map((row) => ({
+      productCode: String(row['제품코드'] || ''),
+      productName: String(row['제품명'] || ''),
+      stock: Number(row['재고'] || 0),
+      targetStock: Number(row['목표재고'] || 0),
+    })),
+    sales: salesRows.map((row) => ({
+      orderTime: String(row['주문시간'] || ''),
+      productId: String(row['제품ID'] || ''),
+      orderQuantity: Number(row['주문수량'] || 0),
+    })),
+    incoming: incomingRows.map((row) => ({
+      incomingDate: String(row['입고일자'] || ''),
+      productCode: String(row['제품코드'] || ''),
+      quantity: Number(row['수량'] || 0),
+    })),
+  };
+}
+
 function parseExcel<T>(file: File, mapper: (row: Record<string, unknown>) => T): Promise<T[]> {
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
@@ -45,9 +76,31 @@ function parseExcel<T>(file: File, mapper: (row: Record<string, unknown>) => T):
   });
 }
 
+function readWorkbook(file: File): Promise<XLSX.WorkBook> {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      try {
+        const data = new Uint8Array(e.target?.result as ArrayBuffer);
+        resolve(XLSX.read(data, { type: 'array' }));
+      } catch (error) {
+        reject(error);
+      }
+    };
+    reader.onerror = () => reject(new Error('파일을 읽을 수 없습니다.'));
+    reader.readAsArrayBuffer(file);
+  });
+}
+
+function sheetToJson(workbook: XLSX.WorkBook, sheetName: string): Record<string, unknown>[] {
+  const worksheet = workbook.Sheets[sheetName];
+  if (!worksheet) return [];
+  return XLSX.utils.sheet_to_json<Record<string, unknown>>(worksheet);
+}
+
 // --- 엑셀 템플릿 다운로드 ---
 export function downloadProductTemplate(): void {
-  const data = [{ '제품코드': 'PROD-001', '재고': 100, '목표재고': 150 }];
+  const data = [{ '제품코드': 'PROD-001', '제품명': '샘플 제품', '재고': 100, '목표재고': 150 }];
   downloadTemplate(data, '초기데이터_템플릿.xlsx', '초기데이터');
 }
 
@@ -61,6 +114,18 @@ export function downloadIncomingTemplate(): void {
   downloadTemplate(data, '입고내역_템플릿.xlsx', '입고내역');
 }
 
+export function downloadFullTemplate(): void {
+  const productRows = [{ '제품코드': 'PROD-001', '제품명': '샘플 제품', '재고': 100, '목표재고': 150 }];
+  const salesRows = [{ '주문시간': '2026-02-08 14:30', '제품ID': 'PROD-001', '주문수량': 5 }];
+  const incomingRows = [{ '입고일자': '2026-02-08', '제품코드': 'PROD-001', '수량': 50 }];
+
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(productRows), '초기데이터');
+  XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(salesRows), '판매내역');
+  XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(incomingRows), '입고내역');
+  XLSX.writeFile(wb, '전체_업로드_템플릿.xlsx');
+}
+
 function downloadTemplate(data: Record<string, unknown>[], filename: string, sheetName: string): void {
   const ws = XLSX.utils.json_to_sheet(data);
   const wb = XLSX.utils.book_new();
@@ -72,6 +137,7 @@ function downloadTemplate(data: Record<string, unknown>[], filename: string, she
 export function exportSummaryToExcel(data: StockSummary[]): void {
   const rows = data.map((d) => ({
     '제품코드': d.productCode,
+    '제품명': d.productName,
     '초기재고': d.initialStock,
     '목표재고': d.targetStock,
     '총입고': d.totalIncoming,
