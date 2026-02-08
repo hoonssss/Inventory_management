@@ -1,20 +1,64 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { calculateStockSummary, getSalesRecords, getIncomingRecords } from '@/lib/storage';
+import {
+  calculateStockSummary,
+  getSalesRecords,
+  getIncomingRecords,
+} from '@/lib/storage';
 import { StockSummary } from '@/types/stock';
 import StockTable from '@/components/StockTable';
 import Link from 'next/link';
+import {
+  CartesianGrid,
+  Legend,
+  Line,
+  LineChart,
+  ResponsiveContainer,
+  Tooltip,
+  XAxis,
+  YAxis,
+} from 'recharts';
 
 export default function DashboardPage() {
   const [summary, setSummary] = useState<StockSummary[]>([]);
   const [salesCount, setSalesCount] = useState(0);
   const [incomingCount, setIncomingCount] = useState(0);
+  const [monthlyData, setMonthlyData] = useState<
+    { month: string; incoming: number; sales: number }[]
+  >([]);
 
   useEffect(() => {
     setSummary(calculateStockSummary());
-    setSalesCount(getSalesRecords().length);
-    setIncomingCount(getIncomingRecords().length);
+    const sales = getSalesRecords();
+    const incoming = getIncomingRecords();
+    setSalesCount(sales.length);
+    setIncomingCount(incoming.length);
+
+    const monthlyMap = new Map<string, { incoming: number; sales: number }>();
+    const normalizeMonth = (value: string) => {
+      const datePart = value.split(' ')[0];
+      return datePart.length >= 7 ? datePart.slice(0, 7) : datePart;
+    };
+
+    incoming.forEach((record) => {
+      const month = normalizeMonth(record.incomingDate);
+      const existing = monthlyMap.get(month) || { incoming: 0, sales: 0 };
+      existing.incoming += record.quantity;
+      monthlyMap.set(month, existing);
+    });
+
+    sales.forEach((record) => {
+      const month = normalizeMonth(record.orderTime);
+      const existing = monthlyMap.get(month) || { incoming: 0, sales: 0 };
+      existing.sales += record.orderQuantity;
+      monthlyMap.set(month, existing);
+    });
+
+    const monthly = Array.from(monthlyMap.entries())
+      .sort(([a], [b]) => a.localeCompare(b))
+      .map(([month, values]) => ({ month, ...values }));
+    setMonthlyData(monthly);
   }, []);
 
   const totalProducts = summary.length;
@@ -62,6 +106,30 @@ export default function DashboardPage() {
           <p className="text-sm text-gray-500">초기재고 + 입고 - 판매 = 현재재고</p>
         </div>
         <StockTable data={summary} />
+      </div>
+
+      <div className="bg-white rounded-lg shadow">
+        <div className="px-6 py-4 border-b">
+          <h2 className="text-lg font-semibold">월별 입고 / 판매</h2>
+          <p className="text-sm text-gray-500">월 단위로 합산된 입고 및 판매량입니다.</p>
+        </div>
+        <div className="p-6">
+          {monthlyData.length > 0 ? (
+            <ResponsiveContainer width="100%" height={280}>
+              <LineChart data={monthlyData}>
+                <CartesianGrid strokeDasharray="3 3" />
+                <XAxis dataKey="month" />
+                <YAxis />
+                <Tooltip />
+                <Legend />
+                <Line type="monotone" dataKey="incoming" stroke="#10B981" name="입고" />
+                <Line type="monotone" dataKey="sales" stroke="#F59E0B" name="판매" />
+              </LineChart>
+            </ResponsiveContainer>
+          ) : (
+            <p className="text-gray-500 text-center py-8">월별 거래 데이터가 없습니다.</p>
+          )}
+        </div>
       </div>
     </div>
   );
