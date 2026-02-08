@@ -86,9 +86,43 @@ export function clearIncomingRecords(): void {
   localStorage.removeItem(INCOMING_KEY);
 }
 
+// --- 판매 개별 삭제 ---
+export function deleteSalesRecord(index: number): void {
+  const records = getSalesRecords();
+  records.splice(index, 1);
+  setSalesRecords(records);
+}
+
+// --- 입고 개별 삭제 ---
+export function deleteIncomingRecord(index: number): void {
+  const records = getIncomingRecords();
+  records.splice(index, 1);
+  setIncomingRecords(records);
+}
+
 // --- 전체 초기화 ---
 export function clearAllData(): void {
   localStorage.removeItem(PRODUCTS_KEY);
   localStorage.removeItem(SALES_KEY);
   localStorage.removeItem(INCOMING_KEY);
+}
+
+// --- 전체 백업/복원 ---
+export function exportFullBackup(): string {
+  return JSON.stringify({
+    products: getProducts(),
+    salesRecords: getSalesRecords(),
+    incomingRecords: getIncomingRecords(),
+  });
+}
+
+export function importFullBackup(json: string): { products: number; sales: number; incoming: number } {
+  const data = JSON.parse(json);
+  const products = data.products || [];
+  const sales = data.salesRecords || [];
+  const incoming = data.incomingRecords || [];
+  setProducts(products);
+  setSalesRecords(sales);
+  setIncomingRecords(incoming);
+  return { products: products.length, sales: sales.length, incoming: incoming.length };
 }
