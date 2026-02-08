@@ -11,12 +11,14 @@ interface StockFormProps {
 
 export default function StockForm({ editItem, onSubmit, onCancel }: StockFormProps) {
   const [productCode, setProductCode] = useState('');
+  const [productName, setProductName] = useState('');
   const [stock, setStock] = useState<number>(0);
   const [targetStock, setTargetStock] = useState<number>(0);
 
   useEffect(() => {
     if (editItem) {
       setProductCode(editItem.productCode);
+      setProductName(editItem.productName || '');
       setStock(editItem.stock);
       setTargetStock(editItem.targetStock);
     } else {
@@ -26,6 +28,7 @@ export default function StockForm({ editItem, onSubmit, onCancel }: StockFormPro
 
   const resetForm = () => {
     setProductCode('');
+    setProductName('');
     setStock(0);
     setTargetStock(0);
   };
@@ -40,6 +43,7 @@ export default function StockForm({ editItem, onSubmit, onCancel }: StockFormPro
 
     onSubmit({
       productCode: productCode.trim(),
+      productName: productName.trim(),
       stock,
       targetStock,
     });
@@ -52,7 +56,7 @@ export default function StockForm({ editItem, onSubmit, onCancel }: StockFormPro
       <h3 className="text-lg font-semibold mb-4">
         {editItem ? '제품 수정' : '제품 추가'}
       </h3>
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-1">제품코드</label>
           <input
@@ -62,6 +66,16 @@ export default function StockForm({ editItem, onSubmit, onCancel }: StockFormPro
             disabled={!!editItem}
             placeholder="예: PROD-001"
             className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:bg-gray-100 disabled:text-gray-500"
+          />
+        </div>
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1">제품명</label>
+          <input
+            type="text"
+            value={productName}
+            onChange={(e) => setProductName(e.target.value)}
+            placeholder="예: 샘플 제품"
+            className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
           />
         </div>
         <div>

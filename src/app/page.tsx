@@ -7,13 +7,13 @@ import StockTable from '@/components/StockTable';
 import Link from 'next/link';
 import {
   CartesianGrid,
+  Legend,
   Line,
   LineChart,
   ResponsiveContainer,
   Tooltip,
   XAxis,
   YAxis,
-  Legend,
 } from 'recharts';
 
 export default function DashboardPage() {

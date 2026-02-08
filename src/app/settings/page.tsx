@@ -91,6 +91,7 @@ export default function SettingsPage() {
               <thead className="bg-gray-50">
                 <tr>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">제품코드</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">제품명</th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">재고</th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">목표재고</th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">작업</th>
@@ -100,6 +101,7 @@ export default function SettingsPage() {
                 {products.map((p) => (
                   <tr key={p.productCode} className="hover:bg-gray-50">
                     <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{p.productCode}</td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700">{p.productName || '-'}</td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700">{p.stock}</td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700">{p.targetStock}</td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm space-x-3">
