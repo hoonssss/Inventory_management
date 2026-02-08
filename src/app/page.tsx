@@ -43,7 +43,7 @@ export default function DashboardPage() {
     if (!query) return summary;
     return summary.filter((item) =>
       item.productCode.toLowerCase().includes(query)
-      || item.productName.toLowerCase().includes(query),
+      || (item.productName || '').toLowerCase().includes(query),
     );
   }, [search, summary]);
 
