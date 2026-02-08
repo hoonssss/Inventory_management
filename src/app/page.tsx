@@ -1,82 +1,21 @@
 'use client';
 
-import { useEffect, useMemo, useState } from 'react';
-import {
-  calculateStockSummary,
-  getSalesRecords,
-  getIncomingRecords,
-} from '@/lib/storage';
-import { IncomingRecord, SalesRecord, StockSummary } from '@/types/stock';
+import { useEffect, useState } from 'react';
+import { calculateStockSummary, getSalesRecords, getIncomingRecords } from '@/lib/storage';
+import { StockSummary } from '@/types/stock';
 import StockTable from '@/components/StockTable';
 import Link from 'next/link';
-import {
-  CartesianGrid,
-  Legend,
-  Line,
-  LineChart,
-  ResponsiveContainer,
-  Tooltip,
-  XAxis,
-  YAxis,
-} from 'recharts';
 
 export default function DashboardPage() {
   const [summary, setSummary] = useState<StockSummary[]>([]);
   const [salesCount, setSalesCount] = useState(0);
   const [incomingCount, setIncomingCount] = useState(0);
-  const [salesRecords, setSalesRecords] = useState<SalesRecord[]>([]);
-  const [incomingRecords, setIncomingRecords] = useState<IncomingRecord[]>([]);
-  const [selectedProductCode, setSelectedProductCode] = useState('all');
 
   useEffect(() => {
     setSummary(calculateStockSummary());
-    const sales = getSalesRecords();
-    const incoming = getIncomingRecords();
-    setSalesCount(sales.length);
-    setIncomingCount(incoming.length);
-    setSalesRecords(sales);
-    setIncomingRecords(incoming);
+    setSalesCount(getSalesRecords().length);
+    setIncomingCount(getIncomingRecords().length);
   }, []);
-
-  const productCodes = useMemo(() => {
-    return summary.map((item) => item.productCode).sort((a, b) => a.localeCompare(b));
-  }, [summary]);
-
-  const monthlyData = useMemo(() => {
-    const monthlyMap = new Map<string, { incoming: number; sales: number }>();
-    const normalizeMonth = (value: string) => {
-      const datePart = value.split(' ')[0];
-      return datePart.length >= 7 ? datePart.slice(0, 7) : datePart;
-    };
-
-    const filteredIncoming =
-      selectedProductCode === 'all'
-        ? incomingRecords
-        : incomingRecords.filter((record) => record.productCode === selectedProductCode);
-
-    const filteredSales =
-      selectedProductCode === 'all'
-        ? salesRecords
-        : salesRecords.filter((record) => record.productId === selectedProductCode);
-
-    filteredIncoming.forEach((record) => {
-      const month = normalizeMonth(record.incomingDate);
-      const existing = monthlyMap.get(month) || { incoming: 0, sales: 0 };
-      existing.incoming += record.quantity;
-      monthlyMap.set(month, existing);
-    });
-
-    filteredSales.forEach((record) => {
-      const month = normalizeMonth(record.orderTime);
-      const existing = monthlyMap.get(month) || { incoming: 0, sales: 0 };
-      existing.sales += record.orderQuantity;
-      monthlyMap.set(month, existing);
-    });
-
-    return Array.from(monthlyMap.entries())
-      .sort(([a], [b]) => a.localeCompare(b))
-      .map(([month, values]) => ({ month, ...values }));
-  }, [incomingRecords, salesRecords, selectedProductCode]);
 
   const totalProducts = summary.length;
   const totalCurrentStock = summary.reduce((sum, d) => sum + d.currentStock, 0);
@@ -123,56 +62,6 @@ export default function DashboardPage() {
           <p className="text-sm text-gray-500">초기재고 + 입고 - 판매 = 현재재고</p>
         </div>
         <StockTable data={summary} />
-      </div>
-
-      <div className="bg-white rounded-lg shadow">
-        <div className="px-6 py-4 border-b">
-          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-            <div>
-              <h2 className="text-lg font-semibold">월별 입고 / 판매</h2>
-              <p className="text-sm text-gray-500">
-                {selectedProductCode === 'all'
-                  ? '전체 제품 기준으로 월별 합산된 입고 및 판매량입니다.'
-                  : `선택한 제품(${selectedProductCode}) 기준 월별 합산입니다.`}
-              </p>
-            </div>
-            <div className="w-full sm:w-60">
-              <label className="sr-only" htmlFor="product-filter">
-                제품 선택
-              </label>
-              <select
-                id="product-filter"
-                value={selectedProductCode}
-                onChange={(event) => setSelectedProductCode(event.target.value)}
-                className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm text-gray-900 shadow-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-200"
-              >
-                <option value="all">전체 제품</option>
-                {productCodes.map((code) => (
-                  <option key={code} value={code}>
-                    {code}
-                  </option>
-                ))}
-              </select>
-            </div>
-          </div>
-        </div>
-        <div className="p-6">
-          {monthlyData.length > 0 ? (
-            <ResponsiveContainer width="100%" height={280}>
-              <LineChart data={monthlyData}>
-                <CartesianGrid strokeDasharray="3 3" />
-                <XAxis dataKey="month" />
-                <YAxis />
-                <Tooltip />
-                <Legend />
-                <Line type="monotone" dataKey="incoming" stroke="#10B981" name="입고" />
-                <Line type="monotone" dataKey="sales" stroke="#F59E0B" name="판매" />
-              </LineChart>
-            </ResponsiveContainer>
-          ) : (
-            <p className="text-gray-500 text-center py-8">월별 거래 데이터가 없습니다.</p>
-          )}
-        </div>
       </div>
     </div>
   );

@@ -12,7 +12,7 @@ export function parseProductsExcel(file: File): Promise<Product[]> {
 
 export function parseSalesExcel(file: File): Promise<SalesRecord[]> {
   return parseExcel<SalesRecord>(file, (row) => ({
-    orderTime: normalizeExcelDate(row['주문시간']),
+    orderTime: String(row['주문시간'] || ''),
     productId: String(row['제품ID'] || ''),
     orderQuantity: Number(row['주문수량'] || 0),
   }));
@@ -20,50 +20,10 @@ export function parseSalesExcel(file: File): Promise<SalesRecord[]> {
 
 export function parseIncomingExcel(file: File): Promise<IncomingRecord[]> {
   return parseExcel<IncomingRecord>(file, (row) => ({
-    incomingDate: normalizeExcelDate(row['입고일자'], { includeTime: false }),
+    incomingDate: String(row['입고일자'] || ''),
     productCode: String(row['제품코드'] || ''),
     quantity: Number(row['수량'] || 0),
   }));
-}
-
-function normalizeExcelDate(
-  value: unknown,
-  options: { includeTime?: boolean } = { includeTime: true },
-): string {
-  if (value === null || value === undefined) {
-    return '';
-  }
-
-  if (typeof value === 'number' && Number.isFinite(value)) {
-    const parsed = XLSX.SSF.parse_date_code(value);
-    if (!parsed) {
-      return String(value);
-    }
-    const year = String(parsed.y).padStart(4, '0');
-    const month = String(parsed.m).padStart(2, '0');
-    const day = String(parsed.d).padStart(2, '0');
-    const datePart = `${year}-${month}-${day}`;
-    const timePart = `${String(parsed.H).padStart(2, '0')}:${String(parsed.M).padStart(2, '0')}`;
-    if (options.includeTime && (parsed.H !== 0 || parsed.M !== 0 || parsed.S !== 0)) {
-      return `${datePart} ${timePart}`;
-    }
-    return datePart;
-  }
-
-  if (value instanceof Date) {
-    const year = value.getFullYear();
-    const month = String(value.getMonth() + 1).padStart(2, '0');
-    const day = String(value.getDate()).padStart(2, '0');
-    const datePart = `${year}-${month}-${day}`;
-    if (!options.includeTime) {
-      return datePart;
-    }
-    const hours = String(value.getHours()).padStart(2, '0');
-    const minutes = String(value.getMinutes()).padStart(2, '0');
-    return `${datePart} ${hours}:${minutes}`;
-  }
-
-  return String(value).trim();
 }
 
 function parseExcel<T>(file: File, mapper: (row: Record<string, unknown>) => T): Promise<T[]> {
