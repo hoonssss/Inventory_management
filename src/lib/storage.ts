@@ -44,6 +44,17 @@ export function setIncomingRecords(data: IncomingRecord[]): void {
 
 export function addIncomingRecords(records: IncomingRecord[]): void {
   const current = getIncomingRecords();
+  const products = getProducts();
+  const existingCodes = new Set(products.map((product) => product.productCode));
+
+  const newProducts = records
+    .map((record) => record.productCode)
+    .filter((productCode) => productCode && !existingCodes.has(productCode))
+    .map((productCode) => ({ productCode, stock: 0, targetStock: 0 }));
+
+  if (newProducts.length > 0) {
+    setProducts([...products, ...newProducts]);
+  }
   setIncomingRecords([...current, ...records]);
 }
 
