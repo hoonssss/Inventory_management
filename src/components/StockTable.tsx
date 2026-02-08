@@ -32,7 +32,7 @@ export default function StockTable({ data }: StockTableProps) {
     }
     return data.filter((item) =>
       item.productCode.toLowerCase().includes(normalizedQuery)
-      || item.productName.toLowerCase().includes(normalizedQuery),
+      || (item.productName || '').toLowerCase().includes(normalizedQuery),
     );
   }, [data, normalizedQuery]);
 
