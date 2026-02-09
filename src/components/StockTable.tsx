@@ -27,6 +27,8 @@ export default function StockTable({ data }: StockTableProps) {
   const [sortDirection, setSortDirection] = useState<SortDirection>('asc');
   const [abcFilter, setAbcFilter] = useState<AbcGrade | 'all'>('all');
   const [sortPreset, setSortPreset] = useState<SortPreset>('default');
+  const [pageSize, setPageSize] = useState(20);
+  const [currentPage, setCurrentPage] = useState(1);
 
   const normalizedQuery = searchQuery.trim().toLowerCase();
 
@@ -77,6 +79,15 @@ export default function StockTable({ data }: StockTableProps) {
     return sorted;
   }, [abcFilteredData, sortDirection, sortKey]);
 
+  const totalItems = sortedData.length;
+  const totalPages = Math.max(1, Math.ceil(totalItems / pageSize));
+  const pageStart = totalItems === 0 ? 0 : (currentPage - 1) * pageSize;
+  const pageEnd = Math.min(pageStart + pageSize, totalItems);
+  const paginatedData = useMemo(
+    () => sortedData.slice(pageStart, pageEnd),
+    [sortedData, pageStart, pageEnd],
+  );
+
   useEffect(() => {
     if (sortPreset === 'default') return;
     if (sortPreset === 'shortage') {
@@ -88,6 +99,16 @@ export default function StockTable({ data }: StockTableProps) {
       setSortDirection('desc');
     }
   }, [sortPreset]);
+
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchQuery, abcFilter, sortKey, sortDirection, sortPreset, pageSize]);
+
+  useEffect(() => {
+    if (currentPage > totalPages) {
+      setCurrentPage(totalPages);
+    }
+  }, [currentPage, totalPages]);
 
   const handleSort = (key: SortKey) => {
     if (sortKey === key) {
@@ -133,7 +154,7 @@ export default function StockTable({ data }: StockTableProps) {
           <p className="text-lg font-semibold">검색</p>
           <p className="text-sm text-gray-500">제품코드/제품명 기준으로 필터링됩니다.</p>
         </div>
-        <div className="grid w-full gap-3 sm:grid-cols-2 lg:max-w-xl">
+        <div className="grid w-full gap-3 sm:grid-cols-2 lg:max-w-2xl">
           <div>
             <label className="block text-xs font-medium text-gray-500 mb-1">정렬 프리셋</label>
             <select
@@ -157,6 +178,18 @@ export default function StockTable({ data }: StockTableProps) {
               <option value="A">A (상위 70%)</option>
               <option value="B">B (다음 20%)</option>
               <option value="C">C (하위 10%)</option>
+            </select>
+          </div>
+          <div>
+            <label className="block text-xs font-medium text-gray-500 mb-1">페이지당 표시</label>
+            <select
+              value={pageSize}
+              onChange={(event) => setPageSize(Number(event.target.value))}
+              className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm text-gray-900 shadow-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-200"
+            >
+              <option value={20}>20개</option>
+              <option value={50}>50개</option>
+              <option value={100}>100개</option>
             </select>
           </div>
         </div>
@@ -206,8 +239,8 @@ export default function StockTable({ data }: StockTableProps) {
             </tr>
           </thead>
           <tbody className="bg-white divide-y divide-gray-200">
-            {sortedData.length > 0 ? (
-              sortedData.map((item) => (
+            {paginatedData.length > 0 ? (
+              paginatedData.map((item) => (
                 <tr key={item.productCode} className="hover:bg-gray-50">
                   <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
                     {item.productCode}
@@ -247,6 +280,35 @@ export default function StockTable({ data }: StockTableProps) {
           </tbody>
         </table>
       </div>
+
+      {sortedData.length > 0 && (
+        <div className="flex flex-col gap-3 px-6 py-4 border-t sm:flex-row sm:items-center sm:justify-between">
+          <p className="text-sm text-gray-500">
+            총 {totalItems}개 중 {pageStart + 1}-{pageEnd}개 표시
+          </p>
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={() => setCurrentPage((prev) => Math.max(1, prev - 1))}
+              disabled={currentPage === 1}
+              className="rounded-lg border border-gray-300 px-3 py-1.5 text-sm text-gray-700 disabled:cursor-not-allowed disabled:opacity-50"
+            >
+              이전
+            </button>
+            <span className="text-sm text-gray-600">
+              {currentPage} / {totalPages}
+            </span>
+            <button
+              type="button"
+              onClick={() => setCurrentPage((prev) => Math.min(totalPages, prev + 1))}
+              disabled={currentPage === totalPages}
+              className="rounded-lg border border-gray-300 px-3 py-1.5 text-sm text-gray-700 disabled:cursor-not-allowed disabled:opacity-50"
+            >
+              다음
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
