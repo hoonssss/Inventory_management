@@ -13,13 +13,19 @@ interface StockChartsProps {
 }
 
 const ABC_COLORS: Record<string, string> = { A: '#10B981', B: '#F59E0B', C: '#EF4444' };
+const MAX_PRODUCT_BARS = 20;
 
 export default function StockCharts({ summaryData, salesData, incomingData }: StockChartsProps) {
-  const barData = summaryData.map((d) => ({
-    name: d.productName ? `${d.productCode} (${d.productName})` : d.productCode,
-    currentStock: d.currentStock,
-    targetStock: d.targetStock,
-  }));
+  const formatProductName = (code: string, name?: string) => (name ? `${code} (${name})` : code);
+
+  const barData = summaryData
+    .map((d) => ({
+      name: formatProductName(d.productCode, d.productName),
+      currentStock: d.currentStock,
+      targetStock: d.targetStock,
+    }))
+    .sort((a, b) => b.currentStock - a.currentStock);
+  const limitedBarData = barData.slice(0, MAX_PRODUCT_BARS);
 
   const dateMap = new Map<string, { incoming: number; sales: number }>();
   incomingData.forEach((r) => {
@@ -38,10 +44,13 @@ export default function StockCharts({ summaryData, salesData, incomingData }: St
     .sort(([a], [b]) => a.localeCompare(b))
     .map(([date, val]) => ({ date, ...val }));
 
-  const gapData = summaryData.map((d) => ({
-    name: d.productName ? `${d.productCode} (${d.productName})` : d.productCode,
-    gap: d.gap,
-  }));
+  const gapData = summaryData
+    .map((d) => ({
+      name: formatProductName(d.productCode, d.productName),
+      gap: d.gap,
+    }))
+    .sort((a, b) => Math.abs(b.gap) - Math.abs(a.gap));
+  const limitedGapData = gapData.slice(0, MAX_PRODUCT_BARS);
 
   // ABC 분석: 판매량 기준
   const abcData = (() => {
@@ -59,12 +68,13 @@ export default function StockCharts({ summaryData, salesData, incomingData }: St
       const grade = pct <= 70 ? 'A' : pct <= 90 ? 'B' : 'C';
       const product = summaryData.find((s) => s.productCode === code);
       return {
-        name: product?.productName ? `${code} (${product.productName})` : code,
+        name: formatProductName(code, product?.productName),
         sales: qty,
         grade,
       };
     });
   })();
+  const limitedAbcData = abcData.slice(0, MAX_PRODUCT_BARS);
 
   // 재고 회전율
   const turnoverData = summaryData
@@ -72,11 +82,12 @@ export default function StockCharts({ summaryData, salesData, incomingData }: St
     .map((d) => {
       const avgStock = (d.initialStock + d.currentStock) / 2;
       return {
-        name: d.productName ? `${d.productCode} (${d.productName})` : d.productCode,
+        name: formatProductName(d.productCode, d.productName),
         turnover: avgStock > 0 ? Number((d.totalSales / avgStock).toFixed(2)) : 0,
       };
     })
     .sort((a, b) => b.turnover - a.turnover);
+  const limitedTurnoverData = turnoverData.slice(0, MAX_PRODUCT_BARS);
 
   return (
     <div className="space-y-8">
@@ -84,7 +95,7 @@ export default function StockCharts({ summaryData, salesData, incomingData }: St
         <h3 className="text-lg font-semibold mb-4 dark:text-white">제품별 현재재고 vs 목표재고</h3>
         {barData.length > 0 ? (
           <ResponsiveContainer width="100%" height={300}>
-            <BarChart data={barData}>
+            <BarChart data={limitedBarData}>
               <CartesianGrid strokeDasharray="3 3" />
               <XAxis dataKey="name" />
               <YAxis />
@@ -96,6 +107,9 @@ export default function StockCharts({ summaryData, salesData, incomingData }: St
           </ResponsiveContainer>
         ) : (
           <p className="text-gray-500 dark:text-gray-400 text-center py-8">데이터가 없습니다.</p>
+        )}
+        {barData.length > MAX_PRODUCT_BARS && (
+          <p className="mt-3 text-xs text-gray-500 dark:text-gray-400">제품이 많아 상위 {MAX_PRODUCT_BARS}개만 표시됩니다.</p>
         )}
       </div>
 
@@ -122,7 +136,7 @@ export default function StockCharts({ summaryData, salesData, incomingData }: St
         <h3 className="text-lg font-semibold mb-4 dark:text-white">제품별 과부족 (현재 - 목표)</h3>
         {gapData.length > 0 ? (
           <ResponsiveContainer width="100%" height={300}>
-            <BarChart data={gapData}>
+            <BarChart data={limitedGapData}>
               <CartesianGrid strokeDasharray="3 3" />
               <XAxis dataKey="name" />
               <YAxis />
@@ -133,6 +147,9 @@ export default function StockCharts({ summaryData, salesData, incomingData }: St
         ) : (
           <p className="text-gray-500 dark:text-gray-400 text-center py-8">데이터가 없습니다.</p>
         )}
+        {gapData.length > MAX_PRODUCT_BARS && (
+          <p className="mt-3 text-xs text-gray-500 dark:text-gray-400">제품이 많아 상위 {MAX_PRODUCT_BARS}개만 표시됩니다.</p>
+        )}
       </div>
 
       {/* 재고 회전율 */}
@@ -141,7 +158,7 @@ export default function StockCharts({ summaryData, salesData, incomingData }: St
         <p className="text-xs text-gray-500 dark:text-gray-400 mb-4">총판매 / 평균재고 (높을수록 효율적)</p>
         {turnoverData.length > 0 ? (
           <ResponsiveContainer width="100%" height={300}>
-            <BarChart data={turnoverData}>
+            <BarChart data={limitedTurnoverData}>
               <CartesianGrid strokeDasharray="3 3" />
               <XAxis dataKey="name" />
               <YAxis />
@@ -151,6 +168,9 @@ export default function StockCharts({ summaryData, salesData, incomingData }: St
           </ResponsiveContainer>
         ) : (
           <p className="text-gray-500 dark:text-gray-400 text-center py-8">판매 기록이 없습니다.</p>
+        )}
+        {turnoverData.length > MAX_PRODUCT_BARS && (
+          <p className="mt-3 text-xs text-gray-500 dark:text-gray-400">제품이 많아 상위 {MAX_PRODUCT_BARS}개만 표시됩니다.</p>
         )}
       </div>
 
@@ -164,13 +184,13 @@ export default function StockCharts({ summaryData, salesData, incomingData }: St
         </p>
         {abcData.length > 0 ? (
           <ResponsiveContainer width="100%" height={300}>
-            <BarChart data={abcData}>
+            <BarChart data={limitedAbcData}>
               <CartesianGrid strokeDasharray="3 3" />
               <XAxis dataKey="name" />
               <YAxis />
               <Tooltip />
               <Bar dataKey="sales" name="판매량">
-                {abcData.map((entry, idx) => (
+                {limitedAbcData.map((entry, idx) => (
                   <Cell key={idx} fill={ABC_COLORS[entry.grade] || '#999'} />
                 ))}
               </Bar>
@@ -178,6 +198,9 @@ export default function StockCharts({ summaryData, salesData, incomingData }: St
           </ResponsiveContainer>
         ) : (
           <p className="text-gray-500 dark:text-gray-400 text-center py-8">판매 기록이 없습니다.</p>
+        )}
+        {abcData.length > MAX_PRODUCT_BARS && (
+          <p className="mt-3 text-xs text-gray-500 dark:text-gray-400">제품이 많아 상위 {MAX_PRODUCT_BARS}개만 표시됩니다.</p>
         )}
         {abcData.length > 0 && (
           <div className="mt-4 overflow-x-auto">
