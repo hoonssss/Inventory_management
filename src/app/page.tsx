@@ -61,6 +61,10 @@ export default function DashboardPage() {
     filteredSummary.map((item) => item.productCode),
   ), [filteredSummary]);
 
+  const productNameMap = useMemo(() => new Map(
+    summary.map((item) => [item.productCode, item.productName || item.productCode]),
+  ), [summary]);
+
   // 날짜 범위 필터 적용
   const dateFilteredSales = useMemo(() => {
     let filtered = search.trim()
@@ -126,6 +130,34 @@ export default function DashboardPage() {
     return Object.entries(seasonTotals).map(([season, sales]) => ({ season, sales }));
   }, [monthlyData]);
 
+  const topSales = useMemo(() => {
+    if (dateFilteredSales.length === 0) return null;
+    const salesMap = new Map<string, number>();
+    dateFilteredSales.forEach((record) => {
+      salesMap.set(record.productId, (salesMap.get(record.productId) || 0) + record.orderQuantity);
+    });
+    let top: { code: string; quantity: number } | null = null;
+    salesMap.forEach((quantity, code) => {
+      if (!top || quantity > top.quantity) top = { code, quantity };
+    });
+    if (!top) return null;
+    return { ...top, name: productNameMap.get(top.code) || top.code };
+  }, [dateFilteredSales, productNameMap]);
+
+  const topIncoming = useMemo(() => {
+    if (dateFilteredIncoming.length === 0) return null;
+    const incomingMap = new Map<string, number>();
+    dateFilteredIncoming.forEach((record) => {
+      incomingMap.set(record.productCode, (incomingMap.get(record.productCode) || 0) + record.quantity);
+    });
+    let top: { code: string; quantity: number } | null = null;
+    incomingMap.forEach((quantity, code) => {
+      if (!top || quantity > top.quantity) top = { code, quantity };
+    });
+    if (!top) return null;
+    return { ...top, name: productNameMap.get(top.code) || top.code };
+  }, [dateFilteredIncoming, productNameMap]);
+
   const latestTwoMonths = useMemo(() => {
     if (monthlyData.length === 0) return { latest: null, previous: null };
     const sorted = [...monthlyData].sort((a, b) => a.month.localeCompare(b.month));
@@ -148,6 +180,22 @@ export default function DashboardPage() {
     if (Number.isNaN(parsed.getTime())) return null;
     return parsed;
   };
+
+  const latestSalesDate = useMemo(() => {
+    const dates = dateFilteredSales
+      .map((record) => parseDate(record.orderTime))
+      .filter((date): date is Date => Boolean(date));
+    if (dates.length === 0) return null;
+    return new Date(Math.max(...dates.map((date) => date.getTime())));
+  }, [dateFilteredSales]);
+
+  const latestIncomingDate = useMemo(() => {
+    const dates = dateFilteredIncoming
+      .map((record) => parseDate(record.incomingDate))
+      .filter((date): date is Date => Boolean(date));
+    if (dates.length === 0) return null;
+    return new Date(Math.max(...dates.map((date) => date.getTime())));
+  }, [dateFilteredIncoming]);
 
   const salesReferenceDate = useMemo(() => {
     const dates = dateFilteredSales
@@ -188,6 +236,10 @@ export default function DashboardPage() {
       return a.daysLeft - b.daysLeft;
     });
   }, [summary, dateFilteredSales, salesReferenceDate]);
+
+  const urgentDepletionCount = useMemo(() => (
+    depletionForecast.filter((item) => item.daysLeft !== null && item.daysLeft <= 7).length
+  ), [depletionForecast]);
 
   const reorderList: ReorderItem[] = useMemo(() => (
     summary
@@ -348,6 +400,54 @@ export default function DashboardPage() {
               </button>
             )}
           </div>
+        </div>
+      </div>
+
+      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-5 gap-4">
+        <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-4 sm:p-6">
+          <p className="text-xs sm:text-sm text-gray-500 dark:text-gray-400">최다 판매 제품</p>
+          <p className="text-lg font-semibold text-gray-900 dark:text-white">
+            {topSales ? topSales.name : '-'}
+          </p>
+          <p className="text-xs text-gray-400 mt-1">
+            {topSales ? `판매 ${topSales.quantity}개` : '판매 데이터 없음'}
+          </p>
+        </div>
+        <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-4 sm:p-6">
+          <p className="text-xs sm:text-sm text-gray-500 dark:text-gray-400">최다 입고 제품</p>
+          <p className="text-lg font-semibold text-gray-900 dark:text-white">
+            {topIncoming ? topIncoming.name : '-'}
+          </p>
+          <p className="text-xs text-gray-400 mt-1">
+            {topIncoming ? `입고 ${topIncoming.quantity}개` : '입고 데이터 없음'}
+          </p>
+        </div>
+        <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-4 sm:p-6">
+          <p className="text-xs sm:text-sm text-gray-500 dark:text-gray-400">최근 판매일</p>
+          <p className="text-lg font-semibold text-gray-900 dark:text-white">
+            {latestSalesDate ? latestSalesDate.toISOString().split('T')[0] : '-'}
+          </p>
+          <p className="text-xs text-gray-400 mt-1">
+            {latestSalesDate ? '마지막 주문 기준' : '판매 기록 없음'}
+          </p>
+        </div>
+        <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-4 sm:p-6">
+          <p className="text-xs sm:text-sm text-gray-500 dark:text-gray-400">최근 입고일</p>
+          <p className="text-lg font-semibold text-gray-900 dark:text-white">
+            {latestIncomingDate ? latestIncomingDate.toISOString().split('T')[0] : '-'}
+          </p>
+          <p className="text-xs text-gray-400 mt-1">
+            {latestIncomingDate ? '마지막 입고 기준' : '입고 기록 없음'}
+          </p>
+        </div>
+        <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-4 sm:p-6">
+          <p className="text-xs sm:text-sm text-gray-500 dark:text-gray-400">7일 내 소진 예상</p>
+          <p className="text-lg font-semibold text-red-600">
+            {urgentDepletionCount}
+          </p>
+          <p className="text-xs text-gray-400 mt-1">
+            {urgentDepletionCount > 0 ? '빠른 재주문 필요' : '긴급 재주문 없음'}
+          </p>
         </div>
       </div>
 
