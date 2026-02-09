@@ -146,6 +146,11 @@ export function downloadProductTemplate(): void {
   downloadTemplate(data, '초기데이터_템플릿.xlsx', '초기데이터');
 }
 
+export function downloadProductMasterTemplate(): void {
+  const data = [{ '제품코드': 'PROD-001', '제품명': '샘플 제품' }];
+  downloadTemplate(data, '제품_마스터_템플릿.xlsx', '제품마스터');
+}
+
 export function downloadSalesTemplate(): void {
   const data = [{ '주문시간': '2026-02-08 14:30', '제품ID': 'PROD-001', '주문수량': 5 }];
   downloadTemplate(data, '판매내역_템플릿.xlsx', '판매내역');

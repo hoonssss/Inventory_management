@@ -124,13 +124,7 @@ export default function StockTable({ data }: StockTableProps) {
       type="button"
       onClick={() => handleSort(key)}
       className="inline-flex items-center gap-1 hover:text-gray-700"
-      aria-sort={
-        sortKey === key
-          ? sortDirection === 'asc'
-            ? 'ascending'
-            : 'descending'
-          : 'none'
-      }
+      aria-pressed={sortKey === key}
     >
       <span>{label}</span>
       {sortKey === key ? (
