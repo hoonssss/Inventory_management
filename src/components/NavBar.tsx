@@ -21,8 +21,12 @@ export default function NavBar() {
   const [belowTarget, setBelowTarget] = useState(0);
 
   useEffect(() => {
-    const count = calculateStockSummary().filter((s) => s.gap < 0).length;
-    setBelowTarget(count);
+    const load = async () => {
+      const summary = await calculateStockSummary();
+      const count = summary.filter((s) => s.gap < 0).length;
+      setBelowTarget(count);
+    };
+    void load();
   }, []);
 
   return (

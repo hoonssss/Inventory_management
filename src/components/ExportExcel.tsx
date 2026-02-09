@@ -4,20 +4,20 @@ import { calculateStockSummary, getSalesRecords, getIncomingRecords } from '@/li
 import { exportSummaryToExcel, exportSalesToExcel, exportIncomingToExcel } from '@/lib/excel';
 
 export default function ExportExcel() {
-  const handleExportSummary = () => {
-    const data = calculateStockSummary();
+  const handleExportSummary = async () => {
+    const data = await calculateStockSummary();
     if (data.length === 0) { alert('내보낼 재고 데이터가 없습니다.'); return; }
     exportSummaryToExcel(data);
   };
 
-  const handleExportSales = () => {
-    const data = getSalesRecords();
+  const handleExportSales = async () => {
+    const data = await getSalesRecords();
     if (data.length === 0) { alert('내보낼 판매 데이터가 없습니다.'); return; }
     exportSalesToExcel(data);
   };
 
-  const handleExportIncoming = () => {
-    const data = getIncomingRecords();
+  const handleExportIncoming = async () => {
+    const data = await getIncomingRecords();
     if (data.length === 0) { alert('내보낼 입고 데이터가 없습니다.'); return; }
     exportIncomingToExcel(data);
   };

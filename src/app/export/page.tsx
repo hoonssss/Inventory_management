@@ -14,11 +14,15 @@ export default function ExportPage() {
   const restoreRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
-    setSummary(calculateStockSummary());
+    const load = async () => {
+      const summaryData = await calculateStockSummary();
+      setSummary(summaryData);
+    };
+    void load();
   }, []);
 
-  const handleBackup = () => {
-    const json = exportFullBackup();
+  const handleBackup = async () => {
+    const json = await exportFullBackup();
     const blob = new Blob([json], { type: 'application/json' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
@@ -33,11 +37,12 @@ export default function ExportPage() {
     const file = e.target.files?.[0];
     if (!file) return;
     const reader = new FileReader();
-    reader.onload = (ev) => {
+    reader.onload = async (ev) => {
       try {
-        const result = importFullBackup(ev.target?.result as string);
+        const result = await importFullBackup(ev.target?.result as string);
         setBackupMsg(`복원 완료: 제품 ${result.products}건, 판매 ${result.sales}건, 입고 ${result.incoming}건`);
-        setSummary(calculateStockSummary());
+        const summaryData = await calculateStockSummary();
+        setSummary(summaryData);
       } catch {
         setBackupMsg('백업 파일 형식이 올바르지 않습니다.');
       }

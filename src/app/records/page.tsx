@@ -12,12 +12,18 @@ export default function RecordsPage() {
   const [incoming, setIncoming] = useState<IncomingRecord[]>([]);
   const [search, setSearch] = useState('');
 
-  const refresh = () => {
-    setSales(getSalesRecords());
-    setIncoming(getIncomingRecords());
+  const refresh = async () => {
+    const [salesData, incomingData] = await Promise.all([
+      getSalesRecords(),
+      getIncomingRecords(),
+    ]);
+    setSales(salesData);
+    setIncoming(incomingData);
   };
 
-  useEffect(() => { refresh(); }, []);
+  useEffect(() => {
+    void refresh();
+  }, []);
 
   const filteredSales = useMemo(() => {
     const q = search.trim().toLowerCase();
@@ -31,21 +37,21 @@ export default function RecordsPage() {
     return incoming.filter((r) => r.productCode.toLowerCase().includes(q) || r.incomingDate.includes(q));
   }, [incoming, search]);
 
-  const handleDeleteSale = (idx: number) => {
+  const handleDeleteSale = async (idx: number) => {
     if (!confirm('이 판매 건을 삭제하시겠습니까?')) return;
     // idx is the index in filtered list; find original index
     const original = sales.indexOf(filteredSales[idx]);
     if (original === -1) return;
-    deleteSalesRecord(original);
-    refresh();
+    await deleteSalesRecord(original);
+    await refresh();
   };
 
-  const handleDeleteIncoming = (idx: number) => {
+  const handleDeleteIncoming = async (idx: number) => {
     if (!confirm('이 입고 건을 삭제하시겠습니까?')) return;
     const original = incoming.indexOf(filteredIncoming[idx]);
     if (original === -1) return;
-    deleteIncomingRecord(original);
-    refresh();
+    await deleteIncomingRecord(original);
+    await refresh();
   };
 
   return (
