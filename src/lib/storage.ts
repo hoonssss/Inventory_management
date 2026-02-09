@@ -61,15 +61,19 @@ export function calculateStockSummary(): StockSummary[] {
   const sales = getSalesRecords();
   const incoming = getIncomingRecords();
 
+  const salesMap = new Map<string, number>();
+  sales.forEach((s) => {
+    salesMap.set(s.productId, (salesMap.get(s.productId) || 0) + s.orderQuantity);
+  });
+
+  const incomingMap = new Map<string, number>();
+  incoming.forEach((i) => {
+    incomingMap.set(i.productCode, (incomingMap.get(i.productCode) || 0) + i.quantity);
+  });
+
   return products.map((product) => {
-    const totalSales = sales
-      .filter((s) => s.productId === product.productCode)
-      .reduce((sum, s) => sum + s.orderQuantity, 0);
-
-    const totalIncoming = incoming
-      .filter((i) => i.productCode === product.productCode)
-      .reduce((sum, i) => sum + i.quantity, 0);
-
+    const totalSales = salesMap.get(product.productCode) || 0;
+    const totalIncoming = incomingMap.get(product.productCode) || 0;
     const currentStock = product.stock + totalIncoming - totalSales;
 
     return {
@@ -113,6 +117,20 @@ export function clearAllData(): void {
   localStorage.removeItem(PRODUCTS_KEY);
   localStorage.removeItem(SALES_KEY);
   localStorage.removeItem(INCOMING_KEY);
+}
+
+// --- 제품 마스터 병합 (공통 유틸) ---
+export function mergeProductMaster(existing: Product[], incoming: Product[]): Product[] {
+  const map = new Map(existing.map((p) => [p.productCode, p]));
+  incoming.forEach((p) => {
+    const current = map.get(p.productCode);
+    if (current) {
+      map.set(p.productCode, { ...current, productName: p.productName || current.productName });
+    } else {
+      map.set(p.productCode, { productCode: p.productCode, productName: p.productName || '', stock: 0, targetStock: 0, memo: '' });
+    }
+  });
+  return Array.from(map.values());
 }
 
 // --- 전체 백업/복원 ---

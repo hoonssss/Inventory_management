@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useRef } from 'react';
-import { getProducts, setProducts, addSalesRecords, addIncomingRecords } from '@/lib/storage';
+import { getProducts, setProducts, addSalesRecords, addIncomingRecords, mergeProductMaster } from '@/lib/storage';
 import { Product, SalesRecord, IncomingRecord } from '@/types/stock';
 
 interface UploadJsonProps {
@@ -16,19 +16,6 @@ const uploadConfig = {
   sales: { label: '판매내역', desc: '{ orderTime, productId, orderQuantity }' },
   incoming: { label: '입고내역', desc: '{ incomingDate, productCode, quantity }' },
 };
-
-function mergeProductMaster(existing: Product[], incoming: Product[]): Product[] {
-  const map = new Map(existing.map((p) => [p.productCode, p]));
-  incoming.forEach((p) => {
-    const current = map.get(p.productCode);
-    if (current) {
-      map.set(p.productCode, { ...current, productName: p.productName || current.productName });
-    } else {
-      map.set(p.productCode, { productCode: p.productCode, productName: p.productName || '', stock: 0, targetStock: 0, memo: '' });
-    }
-  });
-  return Array.from(map.values());
-}
 
 export default function UploadJson({ onUploadComplete }: UploadJsonProps) {
   const [message, setMessage] = useState<string>('');
@@ -84,18 +71,18 @@ export default function UploadJson({ onUploadComplete }: UploadJsonProps) {
   const config = uploadConfig[activeTab];
 
   return (
-    <div className="bg-white rounded-lg shadow p-6">
-      <h3 className="text-lg font-semibold mb-4">JSON 업로드 (.json)</h3>
+    <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
+      <h3 className="text-lg font-semibold mb-4 dark:text-white">JSON 업로드 (.json)</h3>
 
-      <div className="flex border-b mb-4">
+      <div className="flex flex-wrap border-b dark:border-gray-600 mb-4">
         {(Object.keys(uploadConfig) as UploadType[]).map((key) => (
           <button
             key={key}
             onClick={() => { setActiveTab(key); setMessage(''); }}
             className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors ${
               activeTab === key
-                ? 'border-green-600 text-green-600'
-                : 'border-transparent text-gray-500 hover:text-gray-700'
+                ? 'border-green-600 text-green-600 dark:text-green-400 dark:border-green-400'
+                : 'border-transparent text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200'
             }`}
           >
             {uploadConfig[key].label}
@@ -103,7 +90,7 @@ export default function UploadJson({ onUploadComplete }: UploadJsonProps) {
         ))}
       </div>
 
-      <p className="text-sm text-gray-500 mb-4">
+      <p className="text-sm text-gray-500 dark:text-gray-400 mb-4">
         배열 형식: [{config.desc}]
       </p>
 
@@ -112,7 +99,7 @@ export default function UploadJson({ onUploadComplete }: UploadJsonProps) {
         type="file"
         accept=".json"
         onChange={handleFileUpload}
-        className="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-green-50 file:text-green-700 hover:file:bg-green-100"
+        className="block w-full text-sm text-gray-500 dark:text-gray-400 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-green-50 file:text-green-700 hover:file:bg-green-100 dark:file:bg-green-900/30 dark:file:text-green-400 dark:hover:file:bg-green-900/50"
       />
 
       {message && (

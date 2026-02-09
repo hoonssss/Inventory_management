@@ -39,7 +39,7 @@ export default function RootLayout({
           <main className="flex-1 max-w-7xl mx-auto w-full px-4 sm:px-6 lg:px-8 py-6">
             {children}
           </main>
-          <footer className="bg-white border-t py-4 text-center text-sm text-gray-500">
+          <footer className="bg-white dark:bg-gray-900 border-t dark:border-gray-700 py-4 text-center text-sm text-gray-500 dark:text-gray-400">
             재고관리 시스템 &copy; {new Date().getFullYear()}
           </footer>
         </div>

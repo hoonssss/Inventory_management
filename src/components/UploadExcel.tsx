@@ -12,7 +12,7 @@ import {
   downloadIncomingTemplate,
   downloadFullTemplate,
 } from '@/lib/excel';
-import { getProducts, setProducts, addSalesRecords, addIncomingRecords } from '@/lib/storage';
+import { getProducts, setProducts, addSalesRecords, addIncomingRecords, mergeProductMaster } from '@/lib/storage';
 import { Product } from '@/types/stock';
 
 interface UploadExcelProps {
@@ -33,19 +33,6 @@ const uploadConfig = {
 function mergeProducts(existing: Product[], incoming: Product[]): Product[] {
   const map = new Map(existing.map((p) => [p.productCode, p]));
   incoming.forEach((p) => map.set(p.productCode, p));
-  return Array.from(map.values());
-}
-
-function mergeProductMaster(existing: Product[], incoming: Product[]): Product[] {
-  const map = new Map(existing.map((p) => [p.productCode, p]));
-  incoming.forEach((p) => {
-    const current = map.get(p.productCode);
-    if (current) {
-      map.set(p.productCode, { ...current, productName: p.productName || current.productName });
-    } else {
-      map.set(p.productCode, { productCode: p.productCode, productName: p.productName || '', stock: 0, targetStock: 0, memo: '' });
-    }
-  });
   return Array.from(map.values());
 }
 
