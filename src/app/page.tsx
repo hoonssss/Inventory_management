@@ -136,12 +136,13 @@ export default function DashboardPage() {
     dateFilteredSales.forEach((record) => {
       salesMap.set(record.productId, (salesMap.get(record.productId) || 0) + record.orderQuantity);
     });
-    let top: { code: string; quantity: number } | null = null;
+    let topCode = '';
+    let topQty = 0;
     salesMap.forEach((quantity, code) => {
-      if (!top || quantity > top.quantity) top = { code, quantity };
+      if (quantity > topQty) { topCode = code; topQty = quantity; }
     });
-    if (!top) return null;
-    return { ...top, name: productNameMap.get(top.code) || top.code };
+    if (!topCode) return null;
+    return { code: topCode, quantity: topQty, name: productNameMap.get(topCode) || topCode };
   }, [dateFilteredSales, productNameMap]);
 
   const topIncoming = useMemo(() => {
@@ -150,12 +151,13 @@ export default function DashboardPage() {
     dateFilteredIncoming.forEach((record) => {
       incomingMap.set(record.productCode, (incomingMap.get(record.productCode) || 0) + record.quantity);
     });
-    let top: { code: string; quantity: number } | null = null;
+    let topCode = '';
+    let topQty = 0;
     incomingMap.forEach((quantity, code) => {
-      if (!top || quantity > top.quantity) top = { code, quantity };
+      if (quantity > topQty) { topCode = code; topQty = quantity; }
     });
-    if (!top) return null;
-    return { ...top, name: productNameMap.get(top.code) || top.code };
+    if (!topCode) return null;
+    return { code: topCode, quantity: topQty, name: productNameMap.get(topCode) || topCode };
   }, [dateFilteredIncoming, productNameMap]);
 
   const latestTwoMonths = useMemo(() => {
