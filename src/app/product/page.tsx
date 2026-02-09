@@ -19,12 +19,20 @@ export default function ProductDetailPage() {
   const [memoDraft, setMemoDraft] = useState('');
 
   useEffect(() => {
-    const p = getProducts();
-    setProductsList(p);
-    setSales(getSalesRecords());
-    setIncoming(getIncomingRecords());
-    setSummaries(calculateStockSummary());
-    if (p.length > 0) setSelectedCode(p[0].productCode);
+    const load = async () => {
+      const [productData, salesData, incomingData, summaryData] = await Promise.all([
+        getProducts(),
+        getSalesRecords(),
+        getIncomingRecords(),
+        calculateStockSummary(),
+      ]);
+      setProductsList(productData);
+      setSales(salesData);
+      setIncoming(incomingData);
+      setSummaries(summaryData);
+      if (productData.length > 0) setSelectedCode(productData[0].productCode);
+    };
+    void load();
   }, []);
 
   const selectedProduct = products.find((p) => p.productCode === selectedCode);
@@ -54,10 +62,11 @@ export default function ProductDetailPage() {
     setMemoDraft(selectedProduct?.memo || '');
   }, [selectedProduct]);
 
-  const handleMemoSave = () => {
+  const handleMemoSave = async () => {
     if (!selectedProduct) return;
-    updateProductMemo(selectedProduct.productCode, memoDraft.trim());
-    setProductsList(getProducts());
+    await updateProductMemo(selectedProduct.productCode, memoDraft.trim());
+    const productData = await getProducts();
+    setProductsList(productData);
   };
 
   return (

@@ -32,17 +32,22 @@ export default function DashboardPage() {
   const [dateFrom, setDateFrom] = useState('');
   const [dateTo, setDateTo] = useState('');
 
-  const loadData = useCallback(() => {
-    setSummary(calculateStockSummary());
-    const salesData = getSalesRecords();
-    const incomingData = getIncomingRecords();
+  const loadData = useCallback(async () => {
+    const [summaryData, salesData, incomingData] = await Promise.all([
+      calculateStockSummary(),
+      getSalesRecords(),
+      getIncomingRecords(),
+    ]);
+    setSummary(summaryData);
     setSales(salesData);
     setIncoming(incomingData);
     setSalesCount(salesData.length);
     setIncomingCount(incomingData.length);
   }, []);
 
-  useEffect(() => { loadData(); }, [loadData]);
+  useEffect(() => {
+    void loadData();
+  }, [loadData]);
 
   const totalProducts = summary.length;
   const totalCurrentStock = summary.reduce((sum, d) => sum + d.currentStock, 0);

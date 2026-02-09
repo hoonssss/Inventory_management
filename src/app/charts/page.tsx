@@ -12,9 +12,17 @@ export default function ChartsPage() {
   const [search, setSearch] = useState('');
 
   useEffect(() => {
-    setSummary(calculateStockSummary());
-    setSales(getSalesRecords());
-    setIncoming(getIncomingRecords());
+    const load = async () => {
+      const [summaryData, salesData, incomingData] = await Promise.all([
+        calculateStockSummary(),
+        getSalesRecords(),
+        getIncomingRecords(),
+      ]);
+      setSummary(summaryData);
+      setSales(salesData);
+      setIncoming(incomingData);
+    };
+    void load();
   }, []);
 
   const filteredSummary = useMemo(() => {

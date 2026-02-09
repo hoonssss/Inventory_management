@@ -11,8 +11,9 @@ export default function UploadPage() {
   const [summary, setSummary] = useState<StockSummary[]>([]);
   const [showPreview, setShowPreview] = useState(false);
 
-  const handleUploadComplete = () => {
-    setSummary(calculateStockSummary());
+  const handleUploadComplete = async () => {
+    const summaryData = await calculateStockSummary();
+    setSummary(summaryData);
     setShowPreview(true);
   };
 

@@ -4,8 +4,8 @@ import { calculateStockSummary } from '@/lib/storage';
 import { exportSummaryToPdf } from '@/lib/pdf';
 
 export default function ExportPdf() {
-  const handleExport = () => {
-    const data = calculateStockSummary();
+  const handleExport = async () => {
+    const data = await calculateStockSummary();
     if (data.length === 0) {
       alert('내보낼 재고 데이터가 없습니다.');
       return;

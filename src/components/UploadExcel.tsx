@@ -68,30 +68,33 @@ export default function UploadExcel({ onUploadComplete }: UploadExcelProps) {
         const totalCount = products.length + sales.length + incoming.length;
         if (totalCount === 0) { setMessage('데이터가 없습니다.'); setIsError(true); return; }
         if (products.length > 0) {
-          setProducts(productMode === 'merge' ? mergeProducts(getProducts(), products) : products);
+          const current = await getProducts();
+          await setProducts(productMode === 'merge' ? mergeProducts(current, products) : products);
         }
-        if (sales.length > 0) addSalesRecords(sales);
-        if (incoming.length > 0) addIncomingRecords(incoming);
+        if (sales.length > 0) await addSalesRecords(sales);
+        if (incoming.length > 0) await addIncomingRecords(incoming);
         count = totalCount;
       } else if (activeTab === 'products') {
         const data = await parseProductsExcel(file);
         if (data.length === 0) { setMessage('데이터가 없습니다.'); setIsError(true); return; }
-        setProducts(productMode === 'merge' ? mergeProducts(getProducts(), data) : data);
+        const current = await getProducts();
+        await setProducts(productMode === 'merge' ? mergeProducts(current, data) : data);
         count = data.length;
       } else if (activeTab === 'productMaster') {
         const data = await parseProductsExcel(file);
         if (data.length === 0) { setMessage('데이터가 없습니다.'); setIsError(true); return; }
-        setProducts(mergeProductMaster(getProducts(), data));
+        const current = await getProducts();
+        await setProducts(mergeProductMaster(current, data));
         count = data.length;
       } else if (activeTab === 'sales') {
         const data = await parseSalesExcel(file);
         if (data.length === 0) { setMessage('데이터가 없습니다.'); setIsError(true); return; }
-        addSalesRecords(data);
+        await addSalesRecords(data);
         count = data.length;
       } else {
         const data = await parseIncomingExcel(file);
         if (data.length === 0) { setMessage('데이터가 없습니다.'); setIsError(true); return; }
-        addIncomingRecords(data);
+        await addIncomingRecords(data);
         count = data.length;
       }
 

@@ -16,20 +16,20 @@ function downloadJson(data: unknown, filename: string) {
 }
 
 export default function ExportJson() {
-  const handleExportSummary = () => {
-    const data = calculateStockSummary();
+  const handleExportSummary = async () => {
+    const data = await calculateStockSummary();
     if (data.length === 0) { alert('내보낼 재고 데이터가 없습니다.'); return; }
     downloadJson(data, '재고현황.json');
   };
 
-  const handleExportSales = () => {
-    const data = getSalesRecords();
+  const handleExportSales = async () => {
+    const data = await getSalesRecords();
     if (data.length === 0) { alert('내보낼 판매 데이터가 없습니다.'); return; }
     downloadJson(data, '판매내역.json');
   };
 
-  const handleExportIncoming = () => {
-    const data = getIncomingRecords();
+  const handleExportIncoming = async () => {
+    const data = await getIncomingRecords();
     if (data.length === 0) { alert('내보낼 입고 데이터가 없습니다.'); return; }
     downloadJson(data, '입고내역.json');
   };

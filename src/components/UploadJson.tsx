@@ -41,7 +41,7 @@ export default function UploadJson({ onUploadComplete }: UploadJsonProps) {
     if (!file) return;
 
     const reader = new FileReader();
-    reader.onload = (event) => {
+    reader.onload = async (event) => {
       try {
         const jsonData = JSON.parse(event.target?.result as string);
 
@@ -52,7 +52,7 @@ export default function UploadJson({ onUploadComplete }: UploadJsonProps) {
         }
 
         if (activeTab === 'products') {
-          setProducts(jsonData as Product[]);
+          await setProducts(jsonData as Product[]);
         } else if (activeTab === 'productMaster') {
           const data = (jsonData as Product[]).map((item) => ({
             productCode: String(item.productCode || ''),
@@ -61,11 +61,12 @@ export default function UploadJson({ onUploadComplete }: UploadJsonProps) {
             targetStock: 0,
             memo: '',
           }));
-          setProducts(mergeProductMaster(getProducts(), data));
+          const current = await getProducts();
+          await setProducts(mergeProductMaster(current, data));
         } else if (activeTab === 'sales') {
-          addSalesRecords(jsonData as SalesRecord[]);
+          await addSalesRecords(jsonData as SalesRecord[]);
         } else {
-          addIncomingRecords(jsonData as IncomingRecord[]);
+          await addIncomingRecords(jsonData as IncomingRecord[]);
         }
 
         setMessage(`${jsonData.length}건이 처리되었습니다.`);

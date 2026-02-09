@@ -13,15 +13,28 @@ export default function SettingsPage() {
   const [incomingCount, setIncomingCount] = useState(0);
 
   useEffect(() => {
-    setLocalProducts(getProducts());
-    setSalesCount(getSalesRecords().length);
-    setIncomingCount(getIncomingRecords().length);
+    const load = async () => {
+      const [productData, salesData, incomingData] = await Promise.all([
+        getProducts(),
+        getSalesRecords(),
+        getIncomingRecords(),
+      ]);
+      setLocalProducts(productData);
+      setSalesCount(salesData.length);
+      setIncomingCount(incomingData.length);
+    };
+    void load();
   }, []);
 
-  const refresh = () => {
-    setLocalProducts(getProducts());
-    setSalesCount(getSalesRecords().length);
-    setIncomingCount(getIncomingRecords().length);
+  const refresh = async () => {
+    const [productData, salesData, incomingData] = await Promise.all([
+      getProducts(),
+      getSalesRecords(),
+      getIncomingRecords(),
+    ]);
+    setLocalProducts(productData);
+    setSalesCount(salesData.length);
+    setIncomingCount(incomingData.length);
   };
 
   const filteredProducts = useMemo(() => {
@@ -33,13 +46,13 @@ export default function SettingsPage() {
     );
   }, [products, search]);
 
-  const handleSubmit = (item: Product) => {
-    const current = getProducts();
+  const handleSubmit = async (item: Product) => {
+    const current = await getProducts();
     const existingIndex = current.findIndex((p) => p.productCode === item.productCode);
 
     if (editItem) {
       current[existingIndex] = item;
-      setProducts(current);
+      await setProducts(current);
       setEditItem(null);
     } else {
       if (existingIndex !== -1) {
@@ -47,10 +60,10 @@ export default function SettingsPage() {
         return;
       }
       current.push(item);
-      setProducts(current);
+      await setProducts(current);
     }
 
-    refresh();
+    await refresh();
   };
 
   const handleEdit = (product: Product) => {
@@ -58,31 +71,31 @@ export default function SettingsPage() {
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
-  const handleDelete = (productCode: string) => {
+  const handleDelete = async (productCode: string) => {
     if (!confirm('정말 이 제품을 삭제하시겠습니까?')) return;
     const updated = products.filter((p) => p.productCode !== productCode);
-    setProducts(updated);
-    refresh();
+    await setProducts(updated);
+    await refresh();
     if (editItem?.productCode === productCode) setEditItem(null);
   };
 
-  const handleClearAll = () => {
+  const handleClearAll = async () => {
     if (!confirm('모든 데이터(제품/판매/입고)를 삭제하시겠습니까?\n이 작업은 되돌릴 수 없습니다.')) return;
-    clearAllData();
+    await clearAllData();
     setEditItem(null);
-    refresh();
+    await refresh();
   };
 
-  const handleClearSales = () => {
+  const handleClearSales = async () => {
     if (!confirm(`판매내역 ${salesCount}건을 모두 삭제하시겠습니까?`)) return;
-    clearSalesRecords();
-    refresh();
+    await clearSalesRecords();
+    await refresh();
   };
 
-  const handleClearIncoming = () => {
+  const handleClearIncoming = async () => {
     if (!confirm(`입고내역 ${incomingCount}건을 모두 삭제하시겠습니까?`)) return;
-    clearIncomingRecords();
-    refresh();
+    await clearIncomingRecords();
+    await refresh();
   };
 
   return (
