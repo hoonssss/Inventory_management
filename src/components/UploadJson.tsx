@@ -1,20 +1,34 @@
 'use client';
 
 import { useState, useRef } from 'react';
-import { setProducts, addSalesRecords, addIncomingRecords } from '@/lib/storage';
+import { getProducts, setProducts, addSalesRecords, addIncomingRecords } from '@/lib/storage';
 import { Product, SalesRecord, IncomingRecord } from '@/types/stock';
 
 interface UploadJsonProps {
   onUploadComplete: () => void;
 }
 
-type UploadType = 'products' | 'sales' | 'incoming';
+type UploadType = 'products' | 'productMaster' | 'sales' | 'incoming';
 
 const uploadConfig = {
   products: { label: '초기 데이터', desc: '{ productCode, productName, stock, targetStock }' },
+  productMaster: { label: '제품 마스터', desc: '{ productCode, productName }' },
   sales: { label: '판매내역', desc: '{ orderTime, productId, orderQuantity }' },
   incoming: { label: '입고내역', desc: '{ incomingDate, productCode, quantity }' },
 };
+
+function mergeProductMaster(existing: Product[], incoming: Product[]): Product[] {
+  const map = new Map(existing.map((p) => [p.productCode, p]));
+  incoming.forEach((p) => {
+    const current = map.get(p.productCode);
+    if (current) {
+      map.set(p.productCode, { ...current, productName: p.productName || current.productName });
+    } else {
+      map.set(p.productCode, { productCode: p.productCode, productName: p.productName || '', stock: 0, targetStock: 0, memo: '' });
+    }
+  });
+  return Array.from(map.values());
+}
 
 export default function UploadJson({ onUploadComplete }: UploadJsonProps) {
   const [message, setMessage] = useState<string>('');
@@ -39,6 +53,15 @@ export default function UploadJson({ onUploadComplete }: UploadJsonProps) {
 
         if (activeTab === 'products') {
           setProducts(jsonData as Product[]);
+        } else if (activeTab === 'productMaster') {
+          const data = (jsonData as Product[]).map((item) => ({
+            productCode: String(item.productCode || ''),
+            productName: String(item.productName || ''),
+            stock: 0,
+            targetStock: 0,
+            memo: '',
+          }));
+          setProducts(mergeProductMaster(getProducts(), data));
         } else if (activeTab === 'sales') {
           addSalesRecords(jsonData as SalesRecord[]);
         } else {
