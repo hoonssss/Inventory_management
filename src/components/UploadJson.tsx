@@ -1,20 +1,65 @@
 'use client';
 
 import { useState, useRef } from 'react';
-import { setProducts, addSalesRecords, addIncomingRecords } from '@/lib/storage';
+import { getProducts, setProducts, addSalesRecords, addIncomingRecords } from '@/lib/storage';
 import { Product, SalesRecord, IncomingRecord } from '@/types/stock';
 
 interface UploadJsonProps {
   onUploadComplete: () => void;
 }
 
-type UploadType = 'products' | 'sales' | 'incoming';
+type UploadType = 'products' | 'productMaster' | 'sales' | 'incoming';
 
 const uploadConfig = {
   products: { label: '초기 데이터', desc: '{ productCode, productName, stock, targetStock }' },
+  productMaster: { label: '제품 마스터', desc: '{ productCode, productName }' },
   sales: { label: '판매내역', desc: '{ orderTime, productId, orderQuantity }' },
   incoming: { label: '입고내역', desc: '{ incomingDate, productCode, quantity }' },
 };
+
+function dedupeProducts(incoming: Product[]) {
+  const map = new Map<string, Product>();
+  const duplicates = new Set<string>();
+  let skipped = 0;
+
+  incoming.forEach((product) => {
+    const normalizedCode = product.productCode.trim();
+    if (!normalizedCode) {
+      skipped += 1;
+      return;
+    }
+    if (map.has(normalizedCode)) duplicates.add(normalizedCode);
+    map.set(normalizedCode, {
+      ...product,
+      productCode: normalizedCode,
+      productName: product.productName?.trim() || '',
+    });
+  });
+
+  return { unique: Array.from(map.values()), duplicates: Array.from(duplicates), skipped };
+}
+
+function mergeProductMaster(existing: Product[], incoming: Product[]): Product[] {
+  const map = new Map(existing.map((product) => [product.productCode, product]));
+  incoming.forEach((product) => {
+    const current = map.get(product.productCode);
+    if (current) {
+      map.set(product.productCode, {
+        ...current,
+        productName: product.productName || current.productName,
+      });
+      return;
+    }
+    map.set(product.productCode, {
+      productCode: product.productCode,
+      productName: product.productName || '',
+      stock: 0,
+      targetStock: 0,
+      memo: '',
+    });
+  });
+  return Array.from(map.values());
+}
 
 export default function UploadJson({ onUploadComplete }: UploadJsonProps) {
   const [message, setMessage] = useState<string>('');
@@ -38,7 +83,44 @@ export default function UploadJson({ onUploadComplete }: UploadJsonProps) {
         }
 
         if (activeTab === 'products') {
-          setProducts(jsonData as Product[]);
+          const normalized = (jsonData as Product[]).map((item) => ({
+            productCode: String(item.productCode || ''),
+            productName: String(item.productName || ''),
+            stock: Number(item.stock || 0),
+            targetStock: Number(item.targetStock || 0),
+            memo: String(item.memo || ''),
+          }));
+          const deduped = dedupeProducts(normalized);
+          const duplicateText = deduped.duplicates.length > 0
+            ? ` (중복 ${deduped.duplicates.length}건은 마지막 항목 기준으로 병합)`
+            : '';
+          const skippedText = deduped.skipped > 0 ? ` (제품코드 누락 ${deduped.skipped}건 제외)` : '';
+          setProducts(deduped.unique);
+          setMessage(`${deduped.unique.length}건이 처리되었습니다.${duplicateText}${skippedText}`);
+          setIsError(false);
+          onUploadComplete();
+          return;
+        }
+
+        if (activeTab === 'productMaster') {
+          const normalized = (jsonData as Product[]).map((item) => ({
+            productCode: String(item.productCode || ''),
+            productName: String(item.productName || ''),
+            stock: 0,
+            targetStock: 0,
+            memo: '',
+          }));
+          const deduped = dedupeProducts(normalized);
+          const duplicateText = deduped.duplicates.length > 0
+            ? ` (중복 ${deduped.duplicates.length}건은 마지막 항목 기준으로 병합)`
+            : '';
+          const skippedText = deduped.skipped > 0 ? ` (제품코드 누락 ${deduped.skipped}건 제외)` : '';
+          const current = mergeProductMaster(getProducts(), deduped.unique);
+          setProducts(current);
+          setMessage(`${deduped.unique.length}건이 처리되었습니다.${duplicateText}${skippedText}`);
+          setIsError(false);
+          onUploadComplete();
+          return;
         } else if (activeTab === 'sales') {
           addSalesRecords(jsonData as SalesRecord[]);
         } else {

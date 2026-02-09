@@ -7,6 +7,7 @@ import {
   parseIncomingExcel,
   parseWorkbookExcel,
   downloadProductTemplate,
+  downloadProductMasterTemplate,
   downloadSalesTemplate,
   downloadIncomingTemplate,
   downloadFullTemplate,
@@ -18,12 +19,13 @@ interface UploadExcelProps {
   onUploadComplete: () => void;
 }
 
-type UploadType = 'all' | 'products' | 'sales' | 'incoming';
+type UploadType = 'all' | 'products' | 'productMaster' | 'sales' | 'incoming';
 type ProductMode = 'overwrite' | 'merge';
 
 const uploadConfig = {
   all: { label: '전체 업로드', columns: '초기데이터 / 판매내역 / 입고내역 (시트)', template: downloadFullTemplate },
   products: { label: '초기 데이터', columns: '제품코드 / 제품명 / 재고 / 목표재고', template: downloadProductTemplate },
+  productMaster: { label: '제품 마스터', columns: '제품코드 / 제품명', template: downloadProductMasterTemplate },
   sales: { label: '판매내역', columns: '주문시간 / 제품ID / 주문수량', template: downloadSalesTemplate },
   incoming: { label: '입고내역', columns: '입고일자 / 제품코드 / 수량', template: downloadIncomingTemplate },
 };
@@ -31,6 +33,50 @@ const uploadConfig = {
 function mergeProducts(existing: Product[], incoming: Product[]): Product[] {
   const map = new Map(existing.map((p) => [p.productCode, p]));
   incoming.forEach((p) => map.set(p.productCode, p));
+  return Array.from(map.values());
+}
+
+function dedupeProducts(incoming: Product[]) {
+  const map = new Map<string, Product>();
+  const duplicates = new Set<string>();
+  let skipped = 0;
+
+  incoming.forEach((product) => {
+    const normalizedCode = product.productCode.trim();
+    if (!normalizedCode) {
+      skipped += 1;
+      return;
+    }
+    if (map.has(normalizedCode)) duplicates.add(normalizedCode);
+    map.set(normalizedCode, {
+      ...product,
+      productCode: normalizedCode,
+      productName: product.productName?.trim() || '',
+    });
+  });
+
+  return { unique: Array.from(map.values()), duplicates: Array.from(duplicates), skipped };
+}
+
+function mergeProductMaster(existing: Product[], incoming: Product[]): Product[] {
+  const map = new Map(existing.map((product) => [product.productCode, product]));
+  incoming.forEach((product) => {
+    const current = map.get(product.productCode);
+    if (current) {
+      map.set(product.productCode, {
+        ...current,
+        productName: product.productName || current.productName,
+      });
+      return;
+    }
+    map.set(product.productCode, {
+      productCode: product.productCode,
+      productName: product.productName || '',
+      stock: 0,
+      targetStock: 0,
+      memo: '',
+    });
+  });
   return Array.from(map.values());
 }
 
@@ -47,13 +93,18 @@ export default function UploadExcel({ onUploadComplete }: UploadExcelProps) {
   const processFile = useCallback(async (file: File) => {
     try {
       let count = 0;
+      let duplicateCodes: string[] = [];
+      let skipped = 0;
 
       if (activeTab === 'all') {
         const { products, sales, incoming } = await parseWorkbookExcel(file);
         const totalCount = products.length + sales.length + incoming.length;
         if (totalCount === 0) { setMessage('데이터가 없습니다.'); setIsError(true); return; }
         if (products.length > 0) {
-          setProducts(productMode === 'merge' ? mergeProducts(getProducts(), products) : products);
+          const deduped = dedupeProducts(products);
+          duplicateCodes = deduped.duplicates;
+          skipped = deduped.skipped;
+          setProducts(productMode === 'merge' ? mergeProducts(getProducts(), deduped.unique) : deduped.unique);
         }
         if (sales.length > 0) addSalesRecords(sales);
         if (incoming.length > 0) addIncomingRecords(incoming);
@@ -61,8 +112,19 @@ export default function UploadExcel({ onUploadComplete }: UploadExcelProps) {
       } else if (activeTab === 'products') {
         const data = await parseProductsExcel(file);
         if (data.length === 0) { setMessage('데이터가 없습니다.'); setIsError(true); return; }
-        setProducts(productMode === 'merge' ? mergeProducts(getProducts(), data) : data);
-        count = data.length;
+        const deduped = dedupeProducts(data);
+        duplicateCodes = deduped.duplicates;
+        skipped = deduped.skipped;
+        setProducts(productMode === 'merge' ? mergeProducts(getProducts(), deduped.unique) : deduped.unique);
+        count = deduped.unique.length;
+      } else if (activeTab === 'productMaster') {
+        const data = await parseProductsExcel(file);
+        if (data.length === 0) { setMessage('데이터가 없습니다.'); setIsError(true); return; }
+        const deduped = dedupeProducts(data);
+        duplicateCodes = deduped.duplicates;
+        skipped = deduped.skipped;
+        setProducts(mergeProductMaster(getProducts(), deduped.unique));
+        count = deduped.unique.length;
       } else if (activeTab === 'sales') {
         const data = await parseSalesExcel(file);
         if (data.length === 0) { setMessage('데이터가 없습니다.'); setIsError(true); return; }
@@ -75,7 +137,11 @@ export default function UploadExcel({ onUploadComplete }: UploadExcelProps) {
         count = data.length;
       }
 
-      setMessage(`${count}건이 처리되었습니다.`);
+      const duplicateText = duplicateCodes.length > 0
+        ? ` (중복 ${duplicateCodes.length}건은 마지막 항목 기준으로 병합)`
+        : '';
+      const skippedText = skipped > 0 ? ` (제품코드 누락 ${skipped}건 제외)` : '';
+      setMessage(`${count}건이 처리되었습니다.${duplicateText}${skippedText}`);
       setIsError(false);
       onUploadComplete();
     } catch {
