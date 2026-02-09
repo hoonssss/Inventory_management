@@ -299,8 +299,23 @@ export default function DashboardPage() {
         <div className="flex flex-col md:flex-row md:items-end gap-4">
           <div className="flex-1">
             <p className="text-sm font-medium text-gray-700 dark:text-gray-300">제품 검색</p>
-            <input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="제품코드/제품명"
-              className="mt-1 w-full rounded-lg border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500" />
+            <div className="mt-1 flex items-center gap-2">
+              <input
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                placeholder="제품코드/제품명"
+                className="w-full rounded-lg border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+              />
+              {search.trim() && (
+                <button
+                  type="button"
+                  onClick={() => setSearch('')}
+                  className="text-sm text-blue-600 dark:text-blue-400 hover:underline whitespace-nowrap"
+                >
+                  검색 초기화
+                </button>
+              )}
+            </div>
           </div>
           <div>
             <p className="text-sm font-medium text-gray-700 dark:text-gray-300">기간 (시작)</p>
@@ -312,9 +327,26 @@ export default function DashboardPage() {
             <input type="date" value={dateTo} onChange={(e) => setDateTo(e.target.value)}
               className="mt-1 rounded-lg border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white px-3 py-2 text-sm" />
           </div>
-          {(dateFrom || dateTo) && (
-            <button onClick={() => { setDateFrom(''); setDateTo(''); }} className="text-sm text-blue-600 dark:text-blue-400 hover:underline pb-2">초기화</button>
-          )}
+          <div className="flex items-center gap-3 pb-2">
+            {(dateFrom || dateTo) && (
+              <button
+                type="button"
+                onClick={() => { setDateFrom(''); setDateTo(''); }}
+                className="text-sm text-blue-600 dark:text-blue-400 hover:underline"
+              >
+                기간 초기화
+              </button>
+            )}
+            {(search.trim() || dateFrom || dateTo) && (
+              <button
+                type="button"
+                onClick={() => { setSearch(''); setDateFrom(''); setDateTo(''); }}
+                className="text-sm text-gray-600 dark:text-gray-300 hover:underline"
+              >
+                필터 전체 초기화
+              </button>
+            )}
+          </div>
         </div>
       </div>
 
@@ -478,9 +510,14 @@ export default function DashboardPage() {
       </div>
 
       <div className="bg-white dark:bg-gray-800 rounded-lg shadow">
-        <div className="px-6 py-4 border-b dark:border-gray-700">
-          <h2 className="text-lg font-semibold dark:text-white">재고 현황</h2>
-          <p className="text-sm text-gray-500 dark:text-gray-400">초기재고 + 입고 - 판매 = 현재재고</p>
+        <div className="px-6 py-4 border-b dark:border-gray-700 flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
+          <div>
+            <h2 className="text-lg font-semibold dark:text-white">재고 현황</h2>
+            <p className="text-sm text-gray-500 dark:text-gray-400">초기재고 + 입고 - 판매 = 현재재고</p>
+          </div>
+          <p className="text-xs text-gray-500 dark:text-gray-400">
+            {search.trim() ? `검색 결과 ${filteredSummary.length} / ${summary.length}개` : `총 ${summary.length}개`}
+          </p>
         </div>
         <StockTable data={filteredSummary} />
       </div>
