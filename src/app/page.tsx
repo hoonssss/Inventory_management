@@ -221,6 +221,15 @@ export default function DashboardPage() {
     return top;
   }, [summary, dateFilteredSales]);
 
+  const heatmapSource = search.trim() ? filteredSummary : summary;
+  const heatmapLimit = 200;
+  const heatmapData = useMemo(() => (
+    [...heatmapSource]
+      .sort((a, b) => Math.abs(b.gap) - Math.abs(a.gap))
+      .slice(0, heatmapLimit)
+  ), [heatmapSource]);
+  const heatmapHiddenCount = Math.max(0, heatmapSource.length - heatmapData.length);
+
   const heatmapColor = (current: number, target: number) => {
     if (target <= 0) return 'hsl(210, 10%, 85%)';
     const ratio = Math.max(0, Math.min(current / target, 1.2));
@@ -389,19 +398,29 @@ export default function DashboardPage() {
         </div>
 
         <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
-          <h2 className="text-lg font-semibold dark:text-white mb-4">재고 현황 히트맵</h2>
-          {summary.length > 0 ? (
-            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
-              {summary.map((item) => (
-                <div
-                  key={item.productCode}
-                  className="rounded-lg p-3 text-xs text-gray-700"
-                  style={{ backgroundColor: heatmapColor(item.currentStock, item.targetStock) }}
-                >
-                  <p className="font-semibold">{item.productName || item.productCode}</p>
-                  <p className="text-gray-600">현재 {item.currentStock} / 목표 {item.targetStock}</p>
-                </div>
-              ))}
+          <h2 className="text-lg font-semibold dark:text-white">재고 현황 히트맵</h2>
+          <p className="text-xs text-gray-500 dark:text-gray-400 mb-4">
+            {search.trim() ? '검색된 제품 기준' : '전체 제품 기준'} · 과부족 영향도가 큰 순으로 최대 {heatmapLimit}개 표시
+          </p>
+          {heatmapSource.length > 0 ? (
+            <div className="space-y-3">
+              <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3 max-h-96 overflow-y-auto">
+                {heatmapData.map((item) => (
+                  <div
+                    key={item.productCode}
+                    className="rounded-lg p-3 text-xs text-gray-700"
+                    style={{ backgroundColor: heatmapColor(item.currentStock, item.targetStock) }}
+                  >
+                    <p className="font-semibold">{item.productName || item.productCode}</p>
+                    <p className="text-gray-600">현재 {item.currentStock} / 목표 {item.targetStock}</p>
+                  </div>
+                ))}
+              </div>
+              {heatmapHiddenCount > 0 && (
+                <p className="text-xs text-gray-500 dark:text-gray-400">
+                  {heatmapHiddenCount}개 제품은 표시되지 않았습니다. 검색을 사용하면 더 정확하게 확인할 수 있습니다.
+                </p>
+              )}
             </div>
           ) : (
             <p className="text-gray-500 dark:text-gray-400 text-center py-8">표시할 재고 데이터가 없습니다.</p>
