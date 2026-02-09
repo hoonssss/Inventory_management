@@ -7,6 +7,7 @@ import {
   parseIncomingExcel,
   parseWorkbookExcel,
   downloadProductTemplate,
+  downloadProductMasterTemplate,
   downloadSalesTemplate,
   downloadIncomingTemplate,
   downloadFullTemplate,
@@ -18,12 +19,13 @@ interface UploadExcelProps {
   onUploadComplete: () => void;
 }
 
-type UploadType = 'all' | 'products' | 'sales' | 'incoming';
+type UploadType = 'all' | 'products' | 'productMaster' | 'sales' | 'incoming';
 type ProductMode = 'overwrite' | 'merge';
 
 const uploadConfig = {
   all: { label: '전체 업로드', columns: '초기데이터 / 판매내역 / 입고내역 (시트)', template: downloadFullTemplate },
   products: { label: '초기 데이터', columns: '제품코드 / 제품명 / 재고 / 목표재고', template: downloadProductTemplate },
+  productMaster: { label: '제품 마스터', columns: '제품코드 / 제품명', template: downloadProductMasterTemplate },
   sales: { label: '판매내역', columns: '주문시간 / 제품ID / 주문수량', template: downloadSalesTemplate },
   incoming: { label: '입고내역', columns: '입고일자 / 제품코드 / 수량', template: downloadIncomingTemplate },
 };
@@ -31,6 +33,19 @@ const uploadConfig = {
 function mergeProducts(existing: Product[], incoming: Product[]): Product[] {
   const map = new Map(existing.map((p) => [p.productCode, p]));
   incoming.forEach((p) => map.set(p.productCode, p));
+  return Array.from(map.values());
+}
+
+function mergeProductMaster(existing: Product[], incoming: Product[]): Product[] {
+  const map = new Map(existing.map((p) => [p.productCode, p]));
+  incoming.forEach((p) => {
+    const current = map.get(p.productCode);
+    if (current) {
+      map.set(p.productCode, { ...current, productName: p.productName || current.productName });
+    } else {
+      map.set(p.productCode, { productCode: p.productCode, productName: p.productName || '', stock: 0, targetStock: 0, memo: '' });
+    }
+  });
   return Array.from(map.values());
 }
 
@@ -62,6 +77,11 @@ export default function UploadExcel({ onUploadComplete }: UploadExcelProps) {
         const data = await parseProductsExcel(file);
         if (data.length === 0) { setMessage('데이터가 없습니다.'); setIsError(true); return; }
         setProducts(productMode === 'merge' ? mergeProducts(getProducts(), data) : data);
+        count = data.length;
+      } else if (activeTab === 'productMaster') {
+        const data = await parseProductsExcel(file);
+        if (data.length === 0) { setMessage('데이터가 없습니다.'); setIsError(true); return; }
+        setProducts(mergeProductMaster(getProducts(), data));
         count = data.length;
       } else if (activeTab === 'sales') {
         const data = await parseSalesExcel(file);
