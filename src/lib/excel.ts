@@ -1,5 +1,5 @@
 import * as XLSX from 'xlsx';
-import { Product, SalesRecord, IncomingRecord, StockSummary } from '@/types/stock';
+import { Product, SalesRecord, IncomingRecord, StockSummary, ReorderItem } from '@/types/stock';
 
 // --- 엑셀 파싱 ---
 export function parseProductsExcel(file: File): Promise<Product[]> {
@@ -203,6 +203,20 @@ export function exportSalesToExcel(data: SalesRecord[]): void {
   const wb = XLSX.utils.book_new();
   XLSX.utils.book_append_sheet(wb, ws, '판매내역');
   XLSX.writeFile(wb, '판매내역.xlsx');
+}
+
+export function exportReorderToExcel(data: ReorderItem[]): void {
+  const rows = data.map((item) => ({
+    '제품코드': item.productCode,
+    '제품명': item.productName,
+    '현재재고': item.currentStock,
+    '목표재고': item.targetStock,
+    '재주문수량': item.reorderQty,
+  }));
+  const ws = XLSX.utils.json_to_sheet(rows);
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, '재주문목록');
+  XLSX.writeFile(wb, '재주문_목록.xlsx');
 }
 
 export function exportIncomingToExcel(data: IncomingRecord[]): void {

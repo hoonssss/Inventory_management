@@ -32,3 +32,7 @@ export interface StockSummary {
   currentStock: number;
   gap: number; // currentStock - targetStock
 }
+
+export interface ReorderItem extends StockSummary {
+  reorderQty: number;
+}

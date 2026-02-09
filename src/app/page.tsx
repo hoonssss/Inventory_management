@@ -2,7 +2,8 @@
 
 import { useEffect, useMemo, useState, useCallback } from 'react';
 import { calculateStockSummary, getSalesRecords, getIncomingRecords } from '@/lib/storage';
-import { StockSummary, SalesRecord, IncomingRecord } from '@/types/stock';
+import { exportReorderToExcel } from '@/lib/excel';
+import { StockSummary, SalesRecord, IncomingRecord, ReorderItem } from '@/types/stock';
 import StockTable from '@/components/StockTable';
 import Link from 'next/link';
 import {
@@ -188,7 +189,7 @@ export default function DashboardPage() {
     });
   }, [summary, dateFilteredSales, salesReferenceDate]);
 
-  const reorderList = useMemo(() => (
+  const reorderList: ReorderItem[] = useMemo(() => (
     summary
       .filter((item) => item.gap < 0)
       .map((item) => ({
@@ -462,7 +463,17 @@ export default function DashboardPage() {
 
       <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
         <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
-          <h2 className="text-lg font-semibold dark:text-white mb-4">자동 재주문 알림</h2>
+          <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between mb-4">
+            <h2 className="text-lg font-semibold dark:text-white">자동 재주문 알림</h2>
+            <button
+              type="button"
+              onClick={() => exportReorderToExcel(reorderList)}
+              disabled={reorderList.length === 0}
+              className="inline-flex items-center justify-center rounded-lg border border-blue-200 bg-blue-50 px-3 py-1.5 text-xs font-medium text-blue-700 transition-colors hover:bg-blue-100 disabled:cursor-not-allowed disabled:opacity-50 dark:border-blue-500/30 dark:bg-blue-500/10 dark:text-blue-200 dark:hover:bg-blue-500/20"
+            >
+              재주문 목록 다운로드 ({reorderList.length})
+            </button>
+          </div>
           {reorderList.length > 0 ? (
             <ul className="space-y-3">
               {reorderList.map((item) => (
