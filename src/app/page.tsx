@@ -32,6 +32,18 @@ export default function DashboardPage() {
   const [dateFrom, setDateFrom] = useState('');
   const [dateTo, setDateTo] = useState('');
 
+  const formatDateInput = (date: Date) => date.toISOString().split('T')[0];
+
+  const applyDatePreset = (days: number) => {
+    const end = new Date();
+    const start = new Date();
+    start.setDate(end.getDate() - (days - 1));
+    setDateFrom(formatDateInput(start));
+    setDateTo(formatDateInput(end));
+  };
+
+  const hasInvalidDateRange = Boolean(dateFrom && dateTo && dateFrom > dateTo);
+
   const loadData = useCallback(async () => {
     const [summaryData, salesData, incomingData] = await Promise.all([
       calculateStockSummary(),
@@ -72,22 +84,24 @@ export default function DashboardPage() {
 
   // 날짜 범위 필터 적용
   const dateFilteredSales = useMemo(() => {
+    if (hasInvalidDateRange) return [];
     let filtered = search.trim()
       ? sales.filter((r) => filteredProductCodes.has(r.productId))
       : sales;
     if (dateFrom) filtered = filtered.filter((r) => r.orderTime.split(' ')[0] >= dateFrom);
     if (dateTo) filtered = filtered.filter((r) => r.orderTime.split(' ')[0] <= dateTo);
     return filtered;
-  }, [sales, filteredProductCodes, search, dateFrom, dateTo]);
+  }, [sales, filteredProductCodes, search, dateFrom, dateTo, hasInvalidDateRange]);
 
   const dateFilteredIncoming = useMemo(() => {
+    if (hasInvalidDateRange) return [];
     let filtered = search.trim()
       ? incoming.filter((r) => filteredProductCodes.has(r.productCode))
       : incoming;
     if (dateFrom) filtered = filtered.filter((r) => r.incomingDate.split(' ')[0] >= dateFrom);
     if (dateTo) filtered = filtered.filter((r) => r.incomingDate.split(' ')[0] <= dateTo);
     return filtered;
-  }, [incoming, filteredProductCodes, search, dateFrom, dateTo]);
+  }, [incoming, filteredProductCodes, search, dateFrom, dateTo, hasInvalidDateRange]);
 
   const monthlyData = useMemo(() => {
     const dateMap = new Map<string, { incoming: number; sales: number }>();
@@ -388,6 +402,20 @@ export default function DashboardPage() {
               className="mt-1 rounded-lg border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white px-3 py-2 text-sm" />
           </div>
           <div className="flex items-center gap-3 pb-2">
+            <button
+              type="button"
+              onClick={() => applyDatePreset(7)}
+              className="rounded-md border border-gray-300 px-2.5 py-1 text-xs text-gray-700 hover:bg-gray-100 dark:border-gray-600 dark:text-gray-200 dark:hover:bg-gray-700"
+            >
+              최근 7일
+            </button>
+            <button
+              type="button"
+              onClick={() => applyDatePreset(30)}
+              className="rounded-md border border-gray-300 px-2.5 py-1 text-xs text-gray-700 hover:bg-gray-100 dark:border-gray-600 dark:text-gray-200 dark:hover:bg-gray-700"
+            >
+              최근 30일
+            </button>
             {(dateFrom || dateTo) && (
               <button
                 type="button"
@@ -408,6 +436,11 @@ export default function DashboardPage() {
             )}
           </div>
         </div>
+        {hasInvalidDateRange && (
+          <p className="text-sm text-red-600 dark:text-red-400">
+            날짜 범위를 확인해 주세요. 시작일은 종료일보다 늦을 수 없습니다.
+          </p>
+        )}
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-5 gap-4">
