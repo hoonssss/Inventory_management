@@ -31,7 +31,12 @@ export default function ProductDetailPage() {
       setSales(salesData);
       setIncoming(incomingData);
       setSummaries(summaryData);
-      if (productData.length > 0) setSelectedCode(productData[0].productCode);
+      const codeFromQuery = new URLSearchParams(window.location.search).get('code');
+      if (codeFromQuery && productData.some((item) => item.productCode === codeFromQuery)) {
+        setSelectedCode(codeFromQuery);
+      } else if (productData.length > 0) {
+        setSelectedCode(productData[0].productCode);
+      }
     };
     void load();
   }, []);
@@ -50,6 +55,17 @@ export default function ProductDetailPage() {
     events.sort((a, b) => a.date.localeCompare(b.date));
     return events;
   }, [selectedCode, incoming, sales]);
+
+  const returnRecords = useMemo(() => (
+    sales
+      .filter((record) => record.productId === selectedCode)
+      .filter((record) => normalizeSalesChannel(record.channel) === '반품')
+      .sort((a, b) => a.orderTime.localeCompare(b.orderTime))
+  ), [sales, selectedCode]);
+
+  const totalReturnQuantity = useMemo(() => (
+    returnRecords.reduce((sum, record) => sum + getOrderQuantity(record), 0)
+  ), [returnRecords]);
 
   // 재고 회전율 = 총판매 / 평균재고 (간이 계산: 평균재고 = (초기 + 현재) / 2)
   const turnoverRate = useMemo(() => {
@@ -92,7 +108,7 @@ export default function ProductDetailPage() {
       {selectedProduct && summary && (
         <>
           {/* 요약 카드 */}
-          <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
+          <div className="grid grid-cols-2 md:grid-cols-6 gap-4">
             <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-4">
               <p className="text-xs text-gray-500 dark:text-gray-400">초기재고</p>
               <p className="text-xl font-bold text-gray-900 dark:text-white">{summary.initialStock}</p>
@@ -104,6 +120,10 @@ export default function ProductDetailPage() {
             <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-4">
               <p className="text-xs text-gray-500 dark:text-gray-400">총판매</p>
               <p className="text-xl font-bold text-orange-500">-{summary.totalSales}</p>
+            </div>
+            <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-4">
+              <p className="text-xs text-gray-500 dark:text-gray-400">총반품</p>
+              <p className="text-xl font-bold text-sky-600">+{summary.totalReturns}</p>
             </div>
             <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-4">
               <p className="text-xs text-gray-500 dark:text-gray-400">현재재고</p>
@@ -152,6 +172,26 @@ export default function ProductDetailPage() {
                     <span className={`text-sm font-medium ${event.type === 'incoming' || event.quantity < 0 ? 'text-green-600' : 'text-orange-600'}`}>
                       {event.type === 'incoming' ? `+${event.quantity} 입고` : event.quantity < 0 ? `+${Math.abs(event.quantity)} 반품` : `-${event.quantity} 판매`}
                     </span>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+
+          {/* 반품 상세 */}
+          <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
+            <div className="mb-3 flex items-center justify-between">
+              <h2 className="text-lg font-semibold dark:text-white">반품 정보</h2>
+              <span className="text-sm font-medium text-sky-600">총 {totalReturnQuantity}개</span>
+            </div>
+            {returnRecords.length === 0 ? (
+              <p className="text-sm text-gray-500 dark:text-gray-400">반품 이력이 없습니다.</p>
+            ) : (
+              <div className="space-y-2 max-h-64 overflow-y-auto">
+                {returnRecords.map((record, index) => (
+                  <div key={`${record.orderTime}-${index}`} className="flex items-center justify-between rounded-md border border-sky-100 bg-sky-50/50 px-3 py-2 text-sm dark:border-sky-500/30 dark:bg-sky-500/10">
+                    <span className="text-gray-600 dark:text-gray-200">{record.orderTime}</span>
+                    <span className="font-semibold text-sky-700 dark:text-sky-200">+{getOrderQuantity(record)} 반품</span>
                   </div>
                 ))}
               </div>

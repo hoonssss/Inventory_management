@@ -268,11 +268,13 @@ export default function DashboardPage() {
   const reorderList: ReorderItem[] = useMemo(() => (
     summary
       .filter((item) => item.gap < 0)
+      .filter((item) => item.currentStock <= item.targetStock * 0.8 || Math.abs(item.gap) >= 10)
       .map((item) => ({
         ...item,
-        reorderQty: Math.abs(item.gap),
+        reorderQty: Math.max(1, Math.abs(item.gap)),
       }))
       .sort((a, b) => b.reorderQty - a.reorderQty)
+      .slice(0, 20)
   ), [summary]);
 
   const salesShareData = useMemo(() => {
@@ -618,6 +620,9 @@ export default function DashboardPage() {
               재주문 목록 다운로드 ({reorderList.length})
             </button>
           </div>
+          <p className="mb-3 text-xs text-gray-500 dark:text-gray-400">
+            목표 대비 20% 이하이거나 부족 수량이 10개 이상인 제품만 표시합니다.
+          </p>
           {reorderList.length > 0 ? (
             <ul className="space-y-3">
               {reorderList.map((item) => (

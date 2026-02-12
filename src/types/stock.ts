@@ -32,6 +32,7 @@ export interface StockSummary {
   targetStock: number;
   totalIncoming: number;
   totalSales: number;
+  totalReturns: number;
   currentStock: number;
   gap: number; // currentStock - targetStock
 }
