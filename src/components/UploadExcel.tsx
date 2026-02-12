@@ -4,11 +4,13 @@ import { useState, useRef, useCallback } from 'react';
 import {
   parseProductsExcel,
   parseSalesExcel,
+  parseReturnsExcel,
   parseIncomingExcel,
   parseWorkbookExcel,
   downloadProductTemplate,
   downloadProductMasterTemplate,
   downloadSalesTemplate,
+  downloadReturnsTemplate,
   downloadIncomingTemplate,
   downloadFullTemplate,
 } from '@/lib/excel';
@@ -19,14 +21,15 @@ interface UploadExcelProps {
   onUploadComplete: () => void;
 }
 
-type UploadType = 'all' | 'products' | 'productMaster' | 'sales' | 'incoming';
+type UploadType = 'all' | 'products' | 'productMaster' | 'sales' | 'returns' | 'incoming';
 type ProductMode = 'overwrite' | 'merge';
 
 const uploadConfig = {
-  all: { label: '전체 업로드', columns: '초기데이터 / 판매내역 / 입고내역 (시트)', template: downloadFullTemplate },
+  all: { label: '전체 업로드', columns: '초기데이터 / 판매내역 / 입고내역 / 반품내역 (시트)', template: downloadFullTemplate },
   products: { label: '초기 데이터', columns: '제품코드 / 제품명 / 재고 / 목표재고', template: downloadProductTemplate },
   productMaster: { label: '제품 마스터', columns: '제품코드 / 제품명', template: downloadProductMasterTemplate },
   sales: { label: '판매내역', columns: '주문시간 / 제품ID / 주문수량 / 구분(오프라인|업체|반품)', template: downloadSalesTemplate },
+  returns: { label: '반품내역', columns: '반품일시 / 제품ID / 반품수량', template: downloadReturnsTemplate },
   incoming: { label: '입고내역', columns: '입고일자 / 제품코드 / 수량', template: downloadIncomingTemplate },
 };
 
@@ -88,6 +91,11 @@ export default function UploadExcel({ onUploadComplete }: UploadExcelProps) {
         count = data.length;
       } else if (activeTab === 'sales') {
         const data = await parseSalesExcel(file);
+        if (data.length === 0) { setMessage('데이터가 없습니다.'); setIsError(true); return; }
+        await addSalesRecords(data);
+        count = data.length;
+      } else if (activeTab === 'returns') {
+        const data = await parseReturnsExcel(file);
         if (data.length === 0) { setMessage('데이터가 없습니다.'); setIsError(true); return; }
         await addSalesRecords(data);
         count = data.length;
