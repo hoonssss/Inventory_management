@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useMemo, useState } from 'react';
+import Link from 'next/link';
 import { getSalesRecords, getIncomingRecords, getProducts, deleteSalesRecord, deleteIncomingRecord } from '@/lib/storage';
 import { SalesRecord, IncomingRecord, Product } from '@/types/stock';
 import { getOrderQuantity, normalizeSalesChannel } from '@/lib/sales';
@@ -125,7 +126,7 @@ export default function RecordsPage() {
                   <td className="px-6 py-3 text-sm text-gray-500 dark:text-gray-400">{i + 1}</td>
                   <td className="px-6 py-3 text-sm text-gray-700 dark:text-gray-300">{r.orderTime}</td>
                   <td className="px-6 py-3 text-sm font-medium text-gray-900 dark:text-white">{r.productId}</td>
-                  <td className="px-6 py-3 text-sm text-gray-700 dark:text-gray-300">{getProductName(r.productId)}</td>
+                  <td className="px-6 py-3 text-sm text-gray-700 dark:text-gray-300"><Link href={`/product?code=${encodeURIComponent(r.productId)}`} className="text-blue-600 hover:text-blue-800 underline underline-offset-2 dark:text-blue-400 dark:hover:text-blue-300">{getProductName(r.productId)}</Link></td>
                   <td className="px-6 py-3 text-sm text-gray-700 dark:text-gray-300">{normalizeSalesChannel(r.channel)}</td>
                   <td className="px-6 py-3 text-sm text-gray-700 dark:text-gray-300">{getOrderQuantity(r)}</td>
                   <td className="px-6 py-3"><button onClick={() => handleDeleteSale(i)} className="text-red-600 hover:text-red-800 text-sm">삭제</button></td>
@@ -155,7 +156,7 @@ export default function RecordsPage() {
                   <td className="px-6 py-3 text-sm text-gray-500 dark:text-gray-400">{i + 1}</td>
                   <td className="px-6 py-3 text-sm text-gray-700 dark:text-gray-300">{r.incomingDate}</td>
                   <td className="px-6 py-3 text-sm font-medium text-gray-900 dark:text-white">{r.productCode}</td>
-                  <td className="px-6 py-3 text-sm text-gray-700 dark:text-gray-300">{getProductName(r.productCode)}</td>
+                  <td className="px-6 py-3 text-sm text-gray-700 dark:text-gray-300"><Link href={`/product?code=${encodeURIComponent(r.productCode)}`} className="text-blue-600 hover:text-blue-800 underline underline-offset-2 dark:text-blue-400 dark:hover:text-blue-300">{getProductName(r.productCode)}</Link></td>
                   <td className="px-6 py-3 text-sm text-gray-700 dark:text-gray-300">{r.quantity}</td>
                   <td className="px-6 py-3"><button onClick={() => handleDeleteIncoming(i)} className="text-red-600 hover:text-red-800 text-sm">삭제</button></td>
                 </tr>

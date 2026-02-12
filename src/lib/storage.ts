@@ -212,6 +212,21 @@ export async function clearIncomingRecords(): Promise<void> {
   await transactionComplete(tx);
 }
 
+
+export async function clearProducts(): Promise<void> {
+  if (!isBrowser()) return;
+  const db = await openDb();
+  const tx = db.transaction(PRODUCTS_STORE, 'readwrite');
+  tx.objectStore(PRODUCTS_STORE).clear();
+  await transactionComplete(tx);
+}
+
+export async function clearReturnRecords(): Promise<void> {
+  const sales = await getSalesRecords();
+  const filtered = sales.filter((record) => normalizeSalesChannel(record.channel) !== '반품');
+  await setSalesRecords(filtered);
+}
+
 // --- 판매 개별 삭제 ---
 export async function deleteSalesRecord(index: number): Promise<void> {
   await deleteByIndex(SALES_STORE, index);

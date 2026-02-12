@@ -73,7 +73,7 @@ export default function GuidePage() {
               <tbody>
                 <tr><td className="px-4 py-2 border-b">주문시간</td><td className="px-4 py-2 border-b">주문 발생 일시</td><td className="px-4 py-2 border-b text-gray-500">2026-02-08 14:30</td></tr>
                 <tr><td className="px-4 py-2 border-b">제품ID</td><td className="px-4 py-2 border-b">초기데이터의 제품코드와 일치</td><td className="px-4 py-2 border-b text-gray-500">PROD-001</td></tr>
-                <tr><td className="px-4 py-2 border-b">구분</td><td className="px-4 py-2 border-b">오프라인/업체/반품 중 선택 (반품은 재고에 +로 반영)</td><td className="px-4 py-2 border-b text-gray-500">오프라인</td></tr>
+                <tr><td className="px-4 py-2 border-b">구분</td><td className="px-4 py-2 border-b">온라인/오프라인/업체/반품 중 선택 (반품은 재고에 +로 반영)</td><td className="px-4 py-2 border-b text-gray-500">온라인</td></tr>
                 <tr><td className="px-4 py-2">주문수량</td><td className="px-4 py-2">판매/반품 수량</td><td className="px-4 py-2 text-gray-500">5</td></tr>
               </tbody>
             </table>

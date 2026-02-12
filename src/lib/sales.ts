@@ -1,10 +1,10 @@
 import { SalesChannel, SalesRecord } from '@/types/stock';
 
-const DEFAULT_SALES_CHANNEL: SalesChannel = '오프라인';
+const DEFAULT_SALES_CHANNEL: SalesChannel = '온라인';
 
 export function normalizeSalesChannel(channel: unknown): SalesChannel {
   const value = String(channel ?? '').trim();
-  if (value === '오프라인' || value === '업체' || value === '반품') {
+  if (value === '온라인' || value === '오프라인' || value === '업체' || value === '반품') {
     return value;
   }
   return DEFAULT_SALES_CHANNEL;
