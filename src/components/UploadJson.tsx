@@ -13,7 +13,7 @@ type UploadType = 'products' | 'productMaster' | 'sales' | 'incoming';
 const uploadConfig = {
   products: { label: '초기 데이터', desc: '{ productCode, productName, stock, targetStock }' },
   productMaster: { label: '제품 마스터', desc: '{ productCode, productName }' },
-  sales: { label: '판매내역', desc: '{ orderTime, productId, orderQuantity }' },
+  sales: { label: '판매내역', desc: '{ orderTime, productId, orderQuantity, channel } (channel: 오프라인|업체|반품)' },
   incoming: { label: '입고내역', desc: '{ incomingDate, productCode, quantity }' },
 };
 

@@ -1,4 +1,5 @@
 import { Product, SalesRecord, IncomingRecord, StockSummary } from '@/types/stock';
+import { getOrderQuantity, getStockDeltaFromSale, normalizeSalesChannel } from '@/lib/sales';
 
 const DB_NAME = 'inventory-db';
 const DB_VERSION = 1;
@@ -161,15 +162,20 @@ export async function calculateStockSummary(): Promise<StockSummary[]> {
   ]);
 
   return products.map((product) => {
-    const totalSales = sales
-      .filter((s) => s.productId === product.productCode)
-      .reduce((sum, s) => sum + s.orderQuantity, 0);
+    const productSales = sales.filter((s) => s.productId === product.productCode);
+
+    const totalSales = productSales
+      .filter((s) => normalizeSalesChannel(s.channel) !== '반품')
+      .reduce((sum, s) => sum + getOrderQuantity(s), 0);
+
+    const salesStockDelta = productSales
+      .reduce((sum, s) => sum + getStockDeltaFromSale(s), 0);
 
     const totalIncoming = incoming
       .filter((i) => i.productCode === product.productCode)
       .reduce((sum, i) => sum + i.quantity, 0);
 
-    const currentStock = product.stock + totalIncoming - totalSales;
+    const currentStock = product.stock + totalIncoming + salesStockDelta;
 
     return {
       productCode: product.productCode,

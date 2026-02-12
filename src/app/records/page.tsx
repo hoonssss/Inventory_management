@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { getSalesRecords, getIncomingRecords, getProducts, deleteSalesRecord, deleteIncomingRecord } from '@/lib/storage';
 import { SalesRecord, IncomingRecord, Product } from '@/types/stock';
+import { getOrderQuantity, normalizeSalesChannel } from '@/lib/sales';
 
 type Tab = 'sales' | 'incoming';
 
@@ -44,7 +45,8 @@ export default function RecordsPage() {
     return sales.filter((r) => {
       const productCode = r.productId.toLowerCase();
       const productName = (productNameByCode.get(productCode) || '').toLowerCase();
-      return productCode.includes(q) || productName.includes(q) || r.orderTime.includes(q);
+      const channel = normalizeSalesChannel(r.channel).toLowerCase();
+      return productCode.includes(q) || productName.includes(q) || r.orderTime.includes(q) || channel.includes(q);
     });
   }, [sales, search, productNameByCode]);
 
@@ -110,20 +112,22 @@ export default function RecordsPage() {
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">주문시간</th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">제품ID</th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">제품명</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">구분</th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">주문수량</th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">삭제</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
               {filteredSales.length === 0 ? (
-                <tr><td colSpan={6} className="px-6 py-10 text-center text-sm text-gray-500 dark:text-gray-400">데이터 없음</td></tr>
+                <tr><td colSpan={7} className="px-6 py-10 text-center text-sm text-gray-500 dark:text-gray-400">데이터 없음</td></tr>
               ) : filteredSales.map((r, i) => (
                 <tr key={i} className="hover:bg-gray-50 dark:hover:bg-gray-700">
                   <td className="px-6 py-3 text-sm text-gray-500 dark:text-gray-400">{i + 1}</td>
                   <td className="px-6 py-3 text-sm text-gray-700 dark:text-gray-300">{r.orderTime}</td>
                   <td className="px-6 py-3 text-sm font-medium text-gray-900 dark:text-white">{r.productId}</td>
                   <td className="px-6 py-3 text-sm text-gray-700 dark:text-gray-300">{getProductName(r.productId)}</td>
-                  <td className="px-6 py-3 text-sm text-gray-700 dark:text-gray-300">{r.orderQuantity}</td>
+                  <td className="px-6 py-3 text-sm text-gray-700 dark:text-gray-300">{normalizeSalesChannel(r.channel)}</td>
+                  <td className="px-6 py-3 text-sm text-gray-700 dark:text-gray-300">{getOrderQuantity(r)}</td>
                   <td className="px-6 py-3"><button onClick={() => handleDeleteSale(i)} className="text-red-600 hover:text-red-800 text-sm">삭제</button></td>
                 </tr>
               ))}

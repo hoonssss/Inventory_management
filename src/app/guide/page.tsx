@@ -73,7 +73,8 @@ export default function GuidePage() {
               <tbody>
                 <tr><td className="px-4 py-2 border-b">주문시간</td><td className="px-4 py-2 border-b">주문 발생 일시</td><td className="px-4 py-2 border-b text-gray-500">2026-02-08 14:30</td></tr>
                 <tr><td className="px-4 py-2 border-b">제품ID</td><td className="px-4 py-2 border-b">초기데이터의 제품코드와 일치</td><td className="px-4 py-2 border-b text-gray-500">PROD-001</td></tr>
-                <tr><td className="px-4 py-2">주문수량</td><td className="px-4 py-2">판매된 수량</td><td className="px-4 py-2 text-gray-500">5</td></tr>
+                <tr><td className="px-4 py-2 border-b">구분</td><td className="px-4 py-2 border-b">오프라인/업체/반품 중 선택 (반품은 재고에 +로 반영)</td><td className="px-4 py-2 border-b text-gray-500">오프라인</td></tr>
+                <tr><td className="px-4 py-2">주문수량</td><td className="px-4 py-2">판매/반품 수량</td><td className="px-4 py-2 text-gray-500">5</td></tr>
               </tbody>
             </table>
           </div>
@@ -148,7 +149,7 @@ export default function GuidePage() {
           <li>모든 데이터는 브라우저 LocalStorage에 저장됩니다. 브라우저 데이터를 삭제하면 모든 데이터가 사라집니다.</li>
           <li>초기 데이터 업로드 시 기존 제품 목록이 <span className="font-medium text-red-600">덮어쓰기</span>됩니다.</li>
           <li>판매/입고 내역은 업로드할 때마다 기존 데이터에 <span className="font-medium text-green-600">누적</span>됩니다.</li>
-          <li>판매내역의 &quot;제품ID&quot;와 초기데이터의 &quot;제품코드&quot;가 일치해야 정상적으로 계산됩니다.</li>
+          <li>판매내역의 &quot;제품ID&quot;와 초기데이터의 &quot;제품코드&quot;가 일치해야 정상적으로 계산됩니다. &quot;구분&quot;이 반품인 경우 해당 수량은 판매량에서 차감되어 재고에 다시 반영됩니다.</li>
           <li>재고설정 페이지에서 개별 데이터(판매/입고)를 각각 초기화할 수 있습니다.</li>
         </ul>
       </section>

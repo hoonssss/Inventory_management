@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState, useCallback } from 'react';
 import { calculateStockSummary, getSalesRecords, getIncomingRecords } from '@/lib/storage';
 import { exportReorderToExcel } from '@/lib/excel';
 import { StockSummary, SalesRecord, IncomingRecord, ReorderItem } from '@/types/stock';
+import { getOrderQuantity, normalizeSalesChannel } from '@/lib/sales';
 import StockTable from '@/components/StockTable';
 import Link from 'next/link';
 import {
@@ -116,7 +117,7 @@ export default function DashboardPage() {
       const datePart = record.orderTime.split(' ')[0];
       const monthKey = datePart.length >= 7 ? datePart.slice(0, 7) : datePart;
       const existing = dateMap.get(monthKey) || { incoming: 0, sales: 0 };
-      existing.sales += record.orderQuantity;
+      if (normalizeSalesChannel(record.channel) !== '반품') existing.sales += getOrderQuantity(record);
       dateMap.set(monthKey, existing);
     });
     return Array.from(dateMap.entries())
@@ -153,7 +154,8 @@ export default function DashboardPage() {
     if (dateFilteredSales.length === 0) return null;
     const salesMap = new Map<string, number>();
     dateFilteredSales.forEach((record) => {
-      salesMap.set(record.productId, (salesMap.get(record.productId) || 0) + record.orderQuantity);
+      if (normalizeSalesChannel(record.channel) === '반품') return;
+      salesMap.set(record.productId, (salesMap.get(record.productId) || 0) + getOrderQuantity(record));
     });
     let topCode = '';
     let topQty = 0;
@@ -233,11 +235,12 @@ export default function DashboardPage() {
     return summary.map((item) => {
       const recentSales = dateFilteredSales
         .filter((record) => record.productId === item.productCode)
+        .filter((record) => normalizeSalesChannel(record.channel) !== '반품')
         .filter((record) => {
           const date = parseDate(record.orderTime);
           return date ? date >= cutoff : false;
         })
-        .reduce((sum, record) => sum + record.orderQuantity, 0);
+        .reduce((sum, record) => sum + getOrderQuantity(record), 0);
       const avgDailySales = recentSales / 30;
       if (avgDailySales <= 0) {
         return { ...item, avgDailySales: 0, daysLeft: null, depletionDate: null };
@@ -275,7 +278,8 @@ export default function DashboardPage() {
   const salesShareData = useMemo(() => {
     const salesMap = new Map<string, number>();
     dateFilteredSales.forEach((record) => {
-      salesMap.set(record.productId, (salesMap.get(record.productId) || 0) + record.orderQuantity);
+      if (normalizeSalesChannel(record.channel) === '반품') return;
+      salesMap.set(record.productId, (salesMap.get(record.productId) || 0) + getOrderQuantity(record));
     });
     const base = summary.map((item) => ({
       name: item.productName || item.productCode,
