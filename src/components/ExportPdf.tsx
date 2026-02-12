@@ -10,7 +10,7 @@ export default function ExportPdf() {
       alert('내보낼 재고 데이터가 없습니다.');
       return;
     }
-    exportSummaryToPdf(data);
+    await exportSummaryToPdf(data);
   };
 
   return (
