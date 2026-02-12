@@ -1,7 +1,8 @@
 'use client';
 
 import { calculateStockSummary, getSalesRecords, getIncomingRecords } from '@/lib/storage';
-import { exportSummaryToExcel, exportSalesToExcel, exportIncomingToExcel } from '@/lib/excel';
+import { exportSummaryToExcel, exportSalesToExcel, exportIncomingToExcel, exportReturnsToExcel } from '@/lib/excel';
+import { normalizeSalesChannel } from '@/lib/sales';
 
 export default function ExportExcel() {
   const handleExportSummary = async () => {
@@ -22,6 +23,13 @@ export default function ExportExcel() {
     exportIncomingToExcel(data);
   };
 
+  const handleExportReturns = async () => {
+    const data = await getSalesRecords();
+    const returns = data.filter((record) => normalizeSalesChannel(record.channel) === '반품');
+    if (returns.length === 0) { alert('내보낼 반품 데이터가 없습니다.'); return; }
+    exportReturnsToExcel(returns);
+  };
+
   return (
     <div className="space-y-3">
       <button onClick={handleExportSummary} className="w-full bg-blue-600 text-white py-2 px-4 rounded-lg hover:bg-blue-700 transition-colors text-sm font-medium">
@@ -32,6 +40,9 @@ export default function ExportExcel() {
       </button>
       <button onClick={handleExportIncoming} className="w-full bg-green-600 text-white py-2 px-4 rounded-lg hover:bg-green-700 transition-colors text-sm font-medium">
         입고내역 내보내기
+      </button>
+      <button onClick={handleExportReturns} className="w-full bg-purple-600 text-white py-2 px-4 rounded-lg hover:bg-purple-700 transition-colors text-sm font-medium">
+        반품내역 내보내기
       </button>
     </div>
   );

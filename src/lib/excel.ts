@@ -22,6 +22,15 @@ export function parseSalesExcel(file: File): Promise<SalesRecord[]> {
   }));
 }
 
+export function parseReturnsExcel(file: File): Promise<SalesRecord[]> {
+  return parseExcel<SalesRecord>(file, (row) => ({
+    orderTime: normalizeExcelDate(row['반품일시']),
+    productId: String(row['제품ID'] || ''),
+    orderQuantity: Number(row['반품수량'] || 0),
+    channel: '반품',
+  }));
+}
+
 export function parseIncomingExcel(file: File): Promise<IncomingRecord[]> {
   return parseExcel<IncomingRecord>(file, (row) => ({
     incomingDate: normalizeExcelDate(row['입고일자'], { includeTime: false }),
@@ -39,6 +48,21 @@ export async function parseWorkbookExcel(file: File): Promise<{
   const productsRows = sheetToJson(workbook, '초기데이터');
   const salesRows = sheetToJson(workbook, '판매내역');
   const incomingRows = sheetToJson(workbook, '입고내역');
+  const returnRows = sheetToJson(workbook, '반품내역');
+
+  const parsedSales = salesRows.map((row) => ({
+    orderTime: normalizeExcelDate(row['주문시간']),
+    productId: String(row['제품ID'] || ''),
+    orderQuantity: Number(row['주문수량'] || 0),
+    channel: normalizeSalesChannel(row['구분']),
+  }));
+
+  const parsedReturns = returnRows.map((row) => ({
+    orderTime: normalizeExcelDate(row['반품일시']),
+    productId: String(row['제품ID'] || ''),
+    orderQuantity: Number(row['반품수량'] || 0),
+    channel: '반품' as const,
+  }));
 
   return {
     products: productsRows.map((row) => ({
@@ -48,12 +72,7 @@ export async function parseWorkbookExcel(file: File): Promise<{
       targetStock: Number(row['목표재고'] || 0),
       memo: String(row['메모'] || ''),
     })),
-    sales: salesRows.map((row) => ({
-      orderTime: normalizeExcelDate(row['주문시간']),
-      productId: String(row['제품ID'] || ''),
-      orderQuantity: Number(row['주문수량'] || 0),
-      channel: normalizeSalesChannel(row['구분']),
-    })),
+    sales: [...parsedSales, ...parsedReturns],
     incoming: incomingRows.map((row) => ({
       incomingDate: normalizeExcelDate(row['입고일자'], { includeTime: false }),
       productCode: String(row['제품코드'] || ''),
@@ -159,6 +178,11 @@ export function downloadSalesTemplate(): void {
   downloadTemplate(data, '판매내역_템플릿.xlsx', '판매내역');
 }
 
+export function downloadReturnsTemplate(): void {
+  const data = [{ '반품일시': '2026-02-08 15:00', '제품ID': 'PROD-001', '반품수량': 2 }];
+  downloadTemplate(data, '반품내역_템플릿.xlsx', '반품내역');
+}
+
 export function downloadIncomingTemplate(): void {
   const data = [{ '입고일자': '2026-02-08', '제품코드': 'PROD-001', '수량': 50 }];
   downloadTemplate(data, '입고내역_템플릿.xlsx', '입고내역');
@@ -168,11 +192,13 @@ export function downloadFullTemplate(): void {
   const productRows = [{ '제품코드': 'PROD-001', '제품명': '샘플 제품', '재고': 100, '목표재고': 150, '메모': '거래처 정보 메모' }];
   const salesRows = [{ '주문시간': '2026-02-08 14:30', '제품ID': 'PROD-001', '주문수량': 5, '구분': '오프라인' }];
   const incomingRows = [{ '입고일자': '2026-02-08', '제품코드': 'PROD-001', '수량': 50 }];
+  const returnRows = [{ '반품일시': '2026-02-08 15:00', '제품ID': 'PROD-001', '반품수량': 2 }];
 
   const wb = XLSX.utils.book_new();
   XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(productRows), '초기데이터');
   XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(salesRows), '판매내역');
   XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(incomingRows), '입고내역');
+  XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(returnRows), '반품내역');
   XLSX.writeFile(wb, '전체_업로드_템플릿.xlsx');
 }
 
@@ -238,4 +264,18 @@ export function exportIncomingToExcel(data: IncomingRecord[]): void {
   const wb = XLSX.utils.book_new();
   XLSX.utils.book_append_sheet(wb, ws, '입고내역');
   XLSX.writeFile(wb, '입고내역.xlsx');
+}
+
+export function exportReturnsToExcel(data: SalesRecord[]): void {
+  const rows = data
+    .filter((d) => normalizeSalesChannel(d.channel) === '반품')
+    .map((d) => ({
+      '반품일시': d.orderTime,
+      '제품ID': d.productId,
+      '반품수량': getOrderQuantity(d),
+    }));
+  const ws = XLSX.utils.json_to_sheet(rows);
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, '반품내역');
+  XLSX.writeFile(wb, '반품내역.xlsx');
 }
