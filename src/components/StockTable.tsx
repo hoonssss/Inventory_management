@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useMemo, useState } from 'react';
+import Link from 'next/link';
 import { StockSummary } from '@/types/stock';
 
 interface StockTableProps {
@@ -14,6 +15,7 @@ type SortKey =
   | 'targetStock'
   | 'totalIncoming'
   | 'totalSales'
+  | 'totalReturns'
   | 'currentStock'
   | 'gap';
 
@@ -225,6 +227,9 @@ export default function StockTable({ data }: StockTableProps) {
                 {renderSortLabel('총판매', 'totalSales')}
               </th>
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                {renderSortLabel('총반품', 'totalReturns')}
+              </th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                 {renderSortLabel('현재재고', 'currentStock')}
               </th>
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
@@ -240,7 +245,12 @@ export default function StockTable({ data }: StockTableProps) {
                     {item.productCode}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700">
-                    {item.productName || '-'}
+                    <Link
+                      href={`/product?code=${encodeURIComponent(item.productCode)}`}
+                      className="font-medium text-blue-600 hover:underline"
+                    >
+                      {item.productName || item.productCode}
+                    </Link>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700">
                     {item.initialStock}
@@ -254,6 +264,9 @@ export default function StockTable({ data }: StockTableProps) {
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-orange-600 font-medium">
                     -{item.totalSales}
                   </td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-sky-600 font-medium">
+                    +{item.totalReturns}
+                  </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm font-bold text-gray-900">
                     {item.currentStock}
                   </td>
@@ -266,7 +279,7 @@ export default function StockTable({ data }: StockTableProps) {
               ))
             ) : (
               <tr>
-                <td colSpan={8} className="px-6 py-10 text-center text-sm text-gray-500">
+                <td colSpan={9} className="px-6 py-10 text-center text-sm text-gray-500">
                   검색 결과가 없습니다.
                 </td>
               </tr>

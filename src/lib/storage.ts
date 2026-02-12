@@ -168,6 +168,10 @@ export async function calculateStockSummary(): Promise<StockSummary[]> {
       .filter((s) => normalizeSalesChannel(s.channel) !== '반품')
       .reduce((sum, s) => sum + getOrderQuantity(s), 0);
 
+    const totalReturns = productSales
+      .filter((s) => normalizeSalesChannel(s.channel) === '반품')
+      .reduce((sum, s) => sum + getOrderQuantity(s), 0);
+
     const salesStockDelta = productSales
       .reduce((sum, s) => sum + getStockDeltaFromSale(s), 0);
 
@@ -184,6 +188,7 @@ export async function calculateStockSummary(): Promise<StockSummary[]> {
       targetStock: product.targetStock,
       totalIncoming,
       totalSales,
+      totalReturns,
       currentStock,
       gap: currentStock - product.targetStock,
     };
