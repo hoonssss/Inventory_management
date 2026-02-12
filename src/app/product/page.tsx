@@ -17,6 +17,7 @@ export default function ProductDetailPage() {
   const [incoming, setIncoming] = useState<IncomingRecord[]>([]);
   const [summaries, setSummaries] = useState<StockSummary[]>([]);
   const [selectedCode, setSelectedCode] = useState('');
+  const [searchKeyword, setSearchKeyword] = useState('');
   const [memoDraft, setMemoDraft] = useState('');
 
   useEffect(() => {
@@ -43,6 +44,22 @@ export default function ProductDetailPage() {
 
   const selectedProduct = products.find((p) => p.productCode === selectedCode);
   const summary = summaries.find((s) => s.productCode === selectedCode);
+  const filteredProducts = useMemo(() => {
+    const keyword = searchKeyword.trim().toLowerCase();
+    if (!keyword) return products;
+    return products.filter((product) => (
+      product.productCode.toLowerCase().includes(keyword)
+      || (product.productName || '').toLowerCase().includes(keyword)
+    ));
+  }, [products, searchKeyword]);
+
+  useEffect(() => {
+    if (filteredProducts.length === 0) return;
+    const selectedInList = filteredProducts.some((product) => product.productCode === selectedCode);
+    if (!selectedInList) {
+      setSelectedCode(filteredProducts[0].productCode);
+    }
+  }, [filteredProducts, selectedCode]);
 
   const timeline = useMemo(() => {
     const events: TimelineEvent[] = [];
@@ -92,17 +109,28 @@ export default function ProductDetailPage() {
 
       <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
         <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">제품 선택</label>
+        <input
+          type="text"
+          value={searchKeyword}
+          onChange={(e) => setSearchKeyword(e.target.value)}
+          placeholder="코드 또는 제품명으로 검색"
+          className="mb-3 w-full md:w-80 rounded-lg border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white px-3 py-2 text-sm"
+        />
         <select
           value={selectedCode}
           onChange={(e) => setSelectedCode(e.target.value)}
           className="w-full md:w-80 rounded-lg border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white px-3 py-2 text-sm"
+          disabled={filteredProducts.length === 0}
         >
-          {products.map((p) => (
+          {filteredProducts.map((p) => (
             <option key={p.productCode} value={p.productCode}>
               {p.productCode} {p.productName ? `(${p.productName})` : ''}
             </option>
           ))}
         </select>
+        {filteredProducts.length === 0 && (
+          <p className="mt-2 text-sm text-gray-500 dark:text-gray-400">검색 결과가 없습니다.</p>
+        )}
       </div>
 
       {selectedProduct && summary && (
@@ -169,8 +197,8 @@ export default function ProductDetailPage() {
                   <div key={i} className="flex items-center gap-3">
                     <div className={`w-2.5 h-2.5 rounded-full shrink-0 ${event.type === 'incoming' ? 'bg-green-500' : 'bg-orange-500'}`} />
                     <span className="text-xs text-gray-500 dark:text-gray-400 w-36 shrink-0">{event.date}</span>
-                    <span className={`text-sm font-medium ${event.type === 'incoming' || event.quantity < 0 ? 'text-green-600' : 'text-orange-600'}`}>
-                      {event.type === 'incoming' ? `+${event.quantity} 입고` : event.quantity < 0 ? `+${Math.abs(event.quantity)} 반품` : `-${event.quantity} 판매`}
+                    <span className={`text-sm font-medium ${event.type === 'incoming' || event.quantity > 0 ? 'text-green-600' : 'text-orange-600'}`}>
+                      {event.type === 'incoming' ? `+${event.quantity} 입고` : event.quantity > 0 ? `+${Math.abs(event.quantity)} 반품` : `-${Math.abs(event.quantity)} 판매`}
                     </span>
                   </div>
                 ))}
