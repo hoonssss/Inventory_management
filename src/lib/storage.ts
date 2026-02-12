@@ -264,9 +264,40 @@ export async function exportFullBackup(): Promise<string> {
 
 export async function importFullBackup(json: string): Promise<{ products: number; sales: number; incoming: number }> {
   const data = JSON.parse(json);
-  const products = data.products || [];
-  const sales = data.salesRecords || [];
-  const incoming = data.incomingRecords || [];
+  const productsSource = Array.isArray(data.products) ? data.products : [];
+  const salesSource = Array.isArray(data.salesRecords)
+    ? data.salesRecords
+    : (Array.isArray(data.sales) ? data.sales : []);
+  const incomingSource = Array.isArray(data.incomingRecords)
+    ? data.incomingRecords
+    : (Array.isArray(data.incoming) ? data.incoming : []);
+
+  const products = productsSource.map((item) => ({
+    productCode: String(item?.productCode || '').trim(),
+    productName: String(item?.productName || '').trim(),
+    stock: Number(item?.stock || 0),
+    targetStock: Number(item?.targetStock || 0),
+    memo: String(item?.memo || '').trim(),
+  })).filter((item) => item.productCode);
+
+  const sales = salesSource.map((item) => ({
+    orderTime: String(item?.orderTime || '').trim(),
+    productId: String(item?.productId || '').trim(),
+    orderQuantity: Number(item?.orderQuantity || 0),
+    channel: item?.channel,
+  })).filter((item) => item.productId && item.orderTime);
+
+  const incoming = incomingSource.map((item) => ({
+    incomingDate: String(item?.incomingDate || '').trim(),
+    productCode: String(item?.productCode || '').trim(),
+    quantity: Number(item?.quantity || 0),
+  })).filter((item) => item.productCode && item.incomingDate);
+
+  if (!Array.isArray(data.products) && !Array.isArray(data.salesRecords) && !Array.isArray(data.incomingRecords)
+    && !Array.isArray(data.sales) && !Array.isArray(data.incoming)) {
+    throw new Error('Invalid backup format');
+  }
+
   await Promise.all([
     setProducts(products),
     setSalesRecords(sales),
