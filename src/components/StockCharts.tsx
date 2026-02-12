@@ -5,6 +5,7 @@ import {
   LineChart, Line, Cell,
 } from 'recharts';
 import { StockSummary, SalesRecord, IncomingRecord } from '@/types/stock';
+import { getOrderQuantity, normalizeSalesChannel } from '@/lib/sales';
 
 interface StockChartsProps {
   summaryData: StockSummary[];
@@ -37,7 +38,7 @@ export default function StockCharts({ summaryData, salesData, incomingData }: St
   salesData.forEach((r) => {
     const date = r.orderTime.split(' ')[0];
     const existing = dateMap.get(date) || { incoming: 0, sales: 0 };
-    existing.sales += r.orderQuantity;
+    if (normalizeSalesChannel(r.channel) !== '반품') existing.sales += getOrderQuantity(r);
     dateMap.set(date, existing);
   });
   const lineData = Array.from(dateMap.entries())
@@ -56,7 +57,8 @@ export default function StockCharts({ summaryData, salesData, incomingData }: St
   const abcData = (() => {
     const salesByProduct = new Map<string, number>();
     salesData.forEach((r) => {
-      salesByProduct.set(r.productId, (salesByProduct.get(r.productId) || 0) + r.orderQuantity);
+      if (normalizeSalesChannel(r.channel) === '반품') return;
+      salesByProduct.set(r.productId, (salesByProduct.get(r.productId) || 0) + getOrderQuantity(r));
     });
     const sorted = Array.from(salesByProduct.entries())
       .sort(([, a], [, b]) => b - a);

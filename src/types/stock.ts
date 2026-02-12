@@ -7,11 +7,14 @@ export interface Product {
   memo?: string;
 }
 
+export type SalesChannel = '오프라인' | '업체' | '반품';
+
 // 판매내역
 export interface SalesRecord {
   orderTime: string;
   productId: string;
   orderQuantity: number;
+  channel?: SalesChannel;
 }
 
 // 입고내역

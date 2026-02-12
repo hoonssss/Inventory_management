@@ -1,5 +1,6 @@
 import * as XLSX from 'xlsx';
 import { Product, SalesRecord, IncomingRecord, StockSummary, ReorderItem } from '@/types/stock';
+import { getOrderQuantity, normalizeSalesChannel } from '@/lib/sales';
 
 // --- 엑셀 파싱 ---
 export function parseProductsExcel(file: File): Promise<Product[]> {
@@ -17,6 +18,7 @@ export function parseSalesExcel(file: File): Promise<SalesRecord[]> {
     orderTime: normalizeExcelDate(row['주문시간']),
     productId: String(row['제품ID'] || ''),
     orderQuantity: Number(row['주문수량'] || 0),
+    channel: normalizeSalesChannel(row['구분']),
   }));
 }
 
@@ -50,6 +52,7 @@ export async function parseWorkbookExcel(file: File): Promise<{
       orderTime: normalizeExcelDate(row['주문시간']),
       productId: String(row['제품ID'] || ''),
       orderQuantity: Number(row['주문수량'] || 0),
+      channel: normalizeSalesChannel(row['구분']),
     })),
     incoming: incomingRows.map((row) => ({
       incomingDate: normalizeExcelDate(row['입고일자'], { includeTime: false }),
@@ -152,7 +155,7 @@ export function downloadProductMasterTemplate(): void {
 }
 
 export function downloadSalesTemplate(): void {
-  const data = [{ '주문시간': '2026-02-08 14:30', '제품ID': 'PROD-001', '주문수량': 5 }];
+  const data = [{ '주문시간': '2026-02-08 14:30', '제품ID': 'PROD-001', '주문수량': 5, '구분': '오프라인' }];
   downloadTemplate(data, '판매내역_템플릿.xlsx', '판매내역');
 }
 
@@ -163,7 +166,7 @@ export function downloadIncomingTemplate(): void {
 
 export function downloadFullTemplate(): void {
   const productRows = [{ '제품코드': 'PROD-001', '제품명': '샘플 제품', '재고': 100, '목표재고': 150, '메모': '거래처 정보 메모' }];
-  const salesRows = [{ '주문시간': '2026-02-08 14:30', '제품ID': 'PROD-001', '주문수량': 5 }];
+  const salesRows = [{ '주문시간': '2026-02-08 14:30', '제품ID': 'PROD-001', '주문수량': 5, '구분': '오프라인' }];
   const incomingRows = [{ '입고일자': '2026-02-08', '제품코드': 'PROD-001', '수량': 50 }];
 
   const wb = XLSX.utils.book_new();
@@ -202,7 +205,8 @@ export function exportSalesToExcel(data: SalesRecord[]): void {
   const rows = data.map((d) => ({
     '주문시간': d.orderTime,
     '제품ID': d.productId,
-    '주문수량': d.orderQuantity,
+    '주문수량': getOrderQuantity(d),
+    '구분': normalizeSalesChannel(d.channel),
   }));
   const ws = XLSX.utils.json_to_sheet(rows);
   const wb = XLSX.utils.book_new();

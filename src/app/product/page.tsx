@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { getProducts, getSalesRecords, getIncomingRecords, calculateStockSummary, updateProductMemo } from '@/lib/storage';
 import { Product, SalesRecord, IncomingRecord, StockSummary } from '@/types/stock';
+import { getOrderQuantity, normalizeSalesChannel } from '@/lib/sales';
 
 interface TimelineEvent {
   date: string;
@@ -45,7 +46,7 @@ export default function ProductDetailPage() {
       .forEach((r) => events.push({ date: r.incomingDate, type: 'incoming', quantity: r.quantity }));
     sales
       .filter((r) => r.productId === selectedCode)
-      .forEach((r) => events.push({ date: r.orderTime, type: 'sales', quantity: r.orderQuantity }));
+      .forEach((r) => events.push({ date: r.orderTime, type: 'sales', quantity: normalizeSalesChannel(r.channel) === '반품' ? getOrderQuantity(r) : -getOrderQuantity(r) }));
     events.sort((a, b) => a.date.localeCompare(b.date));
     return events;
   }, [selectedCode, incoming, sales]);
@@ -148,8 +149,8 @@ export default function ProductDetailPage() {
                   <div key={i} className="flex items-center gap-3">
                     <div className={`w-2.5 h-2.5 rounded-full shrink-0 ${event.type === 'incoming' ? 'bg-green-500' : 'bg-orange-500'}`} />
                     <span className="text-xs text-gray-500 dark:text-gray-400 w-36 shrink-0">{event.date}</span>
-                    <span className={`text-sm font-medium ${event.type === 'incoming' ? 'text-green-600' : 'text-orange-600'}`}>
-                      {event.type === 'incoming' ? `+${event.quantity} 입고` : `-${event.quantity} 판매`}
+                    <span className={`text-sm font-medium ${event.type === 'incoming' || event.quantity < 0 ? 'text-green-600' : 'text-orange-600'}`}>
+                      {event.type === 'incoming' ? `+${event.quantity} 입고` : event.quantity < 0 ? `+${Math.abs(event.quantity)} 반품` : `-${event.quantity} 판매`}
                     </span>
                   </div>
                 ))}
