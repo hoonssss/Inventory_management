@@ -263,14 +263,20 @@ export async function exportFullBackup(): Promise<string> {
 }
 
 export async function importFullBackup(json: string): Promise<{ products: number; sales: number; incoming: number }> {
-  const data = JSON.parse(json);
-  const productsSource = Array.isArray(data.products) ? data.products : [];
-  const salesSource = Array.isArray(data.salesRecords)
-    ? data.salesRecords
-    : (Array.isArray(data.sales) ? data.sales : []);
-  const incomingSource = Array.isArray(data.incomingRecords)
-    ? data.incomingRecords
-    : (Array.isArray(data.incoming) ? data.incoming : []);
+  const data = JSON.parse(json) as Record<string, unknown>;
+  const toRecordArray = (value: unknown): Record<string, unknown>[] => (
+    Array.isArray(value)
+      ? value.filter((item): item is Record<string, unknown> => typeof item === 'object' && item !== null)
+      : []
+  );
+
+  const productsSource = toRecordArray(data.products);
+  const salesSource = toRecordArray(data.salesRecords).length > 0
+    ? toRecordArray(data.salesRecords)
+    : toRecordArray(data.sales);
+  const incomingSource = toRecordArray(data.incomingRecords).length > 0
+    ? toRecordArray(data.incomingRecords)
+    : toRecordArray(data.incoming);
 
   const products = productsSource.map((item) => ({
     productCode: String(item?.productCode || '').trim(),
@@ -284,7 +290,7 @@ export async function importFullBackup(json: string): Promise<{ products: number
     orderTime: String(item?.orderTime || '').trim(),
     productId: String(item?.productId || '').trim(),
     orderQuantity: Number(item?.orderQuantity || 0),
-    channel: item?.channel,
+    channel: typeof item?.channel === 'string' ? item.channel as SalesRecord['channel'] : undefined,
   })).filter((item) => item.productId && item.orderTime);
 
   const incoming = incomingSource.map((item) => ({
