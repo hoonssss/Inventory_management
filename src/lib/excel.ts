@@ -174,7 +174,7 @@ export function downloadProductMasterTemplate(): void {
 }
 
 export function downloadSalesTemplate(): void {
-  const data = [{ '주문시간': '2026-02-08 14:30', '제품ID': 'PROD-001', '주문수량': 5, '구분': '오프라인' }];
+  const data = [{ '주문시간': '2026-02-08 14:30', '제품ID': 'PROD-001', '주문수량': 5, '구분': '온라인' }];
   downloadTemplate(data, '판매내역_템플릿.xlsx', '판매내역');
 }
 
@@ -190,7 +190,7 @@ export function downloadIncomingTemplate(): void {
 
 export function downloadFullTemplate(): void {
   const productRows = [{ '제품코드': 'PROD-001', '제품명': '샘플 제품', '재고': 100, '목표재고': 150, '메모': '거래처 정보 메모' }];
-  const salesRows = [{ '주문시간': '2026-02-08 14:30', '제품ID': 'PROD-001', '주문수량': 5, '구분': '오프라인' }];
+  const salesRows = [{ '주문시간': '2026-02-08 14:30', '제품ID': 'PROD-001', '주문수량': 5, '구분': '온라인' }];
   const incomingRows = [{ '입고일자': '2026-02-08', '제품코드': 'PROD-001', '수량': 50 }];
   const returnRows = [{ '반품일시': '2026-02-08 15:00', '제품ID': 'PROD-001', '반품수량': 2 }];
 

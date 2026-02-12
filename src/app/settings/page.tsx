@@ -1,9 +1,10 @@
 'use client';
 
 import { useEffect, useMemo, useState } from 'react';
-import { getProducts, setProducts, clearAllData, clearSalesRecords, clearIncomingRecords, getSalesRecords, getIncomingRecords } from '@/lib/storage';
+import { getProducts, setProducts, clearAllData, clearSalesRecords, clearIncomingRecords, clearProducts, clearReturnRecords, getSalesRecords, getIncomingRecords } from '@/lib/storage';
 import { Product } from '@/types/stock';
 import StockForm from '@/components/StockForm';
+import { normalizeSalesChannel } from '@/lib/sales';
 
 export default function SettingsPage() {
   const [products, setLocalProducts] = useState<Product[]>([]);
@@ -11,6 +12,7 @@ export default function SettingsPage() {
   const [search, setSearch] = useState('');
   const [salesCount, setSalesCount] = useState(0);
   const [incomingCount, setIncomingCount] = useState(0);
+  const [returnsCount, setReturnsCount] = useState(0);
 
   useEffect(() => {
     const load = async () => {
@@ -22,6 +24,7 @@ export default function SettingsPage() {
       setLocalProducts(productData);
       setSalesCount(salesData.length);
       setIncomingCount(incomingData.length);
+      setReturnsCount(salesData.filter((record) => normalizeSalesChannel(record.channel) === '반품').length);
     };
     void load();
   }, []);
@@ -35,6 +38,7 @@ export default function SettingsPage() {
     setLocalProducts(productData);
     setSalesCount(salesData.length);
     setIncomingCount(incomingData.length);
+    setReturnsCount(salesData.filter((record) => normalizeSalesChannel(record.channel) === '반품').length);
   };
 
   const filteredProducts = useMemo(() => {
@@ -98,6 +102,20 @@ export default function SettingsPage() {
     await refresh();
   };
 
+
+  const handleClearReturns = async () => {
+    if (!confirm(`반품내역 ${returnsCount}건을 모두 삭제하시겠습니까?`)) return;
+    await clearReturnRecords();
+    await refresh();
+  };
+
+  const handleClearProducts = async () => {
+    if (!confirm(`제품마스터 ${products.length}건을 모두 삭제하시겠습니까?`)) return;
+    await clearProducts();
+    setEditItem(null);
+    await refresh();
+  };
+
   return (
     <div className="space-y-6">
       <h1 className="text-2xl font-bold text-gray-900">재고 설정</h1>
@@ -125,6 +143,20 @@ export default function SettingsPage() {
             className="bg-purple-50 text-purple-600 px-4 py-2 rounded-lg hover:bg-purple-100 transition-colors text-sm font-medium disabled:opacity-40 disabled:cursor-not-allowed"
           >
             입고내역 초기화 ({incomingCount}건)
+          </button>
+          <button
+            onClick={handleClearReturns}
+            disabled={returnsCount === 0}
+            className="bg-sky-50 text-sky-600 px-4 py-2 rounded-lg hover:bg-sky-100 transition-colors text-sm font-medium disabled:opacity-40 disabled:cursor-not-allowed"
+          >
+            반품내역 초기화 ({returnsCount}건)
+          </button>
+          <button
+            onClick={handleClearProducts}
+            disabled={products.length === 0}
+            className="bg-indigo-50 text-indigo-600 px-4 py-2 rounded-lg hover:bg-indigo-100 transition-colors text-sm font-medium disabled:opacity-40 disabled:cursor-not-allowed"
+          >
+            제품마스터 초기화 ({products.length}건)
           </button>
           {products.length > 0 && (
             <button
