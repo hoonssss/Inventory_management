@@ -1,8 +1,8 @@
 'use client';
 
 import { useEffect, useMemo, useState } from 'react';
-import { getSalesRecords, getIncomingRecords, deleteSalesRecord, deleteIncomingRecord } from '@/lib/storage';
-import { SalesRecord, IncomingRecord } from '@/types/stock';
+import { getSalesRecords, getIncomingRecords, getProducts, deleteSalesRecord, deleteIncomingRecord } from '@/lib/storage';
+import { SalesRecord, IncomingRecord, Product } from '@/types/stock';
 
 type Tab = 'sales' | 'incoming';
 
@@ -10,16 +10,27 @@ export default function RecordsPage() {
   const [tab, setTab] = useState<Tab>('sales');
   const [sales, setSales] = useState<SalesRecord[]>([]);
   const [incoming, setIncoming] = useState<IncomingRecord[]>([]);
+  const [products, setProducts] = useState<Product[]>([]);
   const [search, setSearch] = useState('');
 
   const refresh = async () => {
-    const [salesData, incomingData] = await Promise.all([
+    const [salesData, incomingData, productsData] = await Promise.all([
       getSalesRecords(),
       getIncomingRecords(),
+      getProducts(),
     ]);
     setSales(salesData);
     setIncoming(incomingData);
+    setProducts(productsData);
   };
+
+  const productNameByCode = useMemo(() => {
+    const map = new Map<string, string>();
+    products.forEach((product) => {
+      map.set(product.productCode.toLowerCase(), product.productName.toLowerCase());
+    });
+    return map;
+  }, [products]);
 
   useEffect(() => {
     void refresh();
@@ -28,14 +39,22 @@ export default function RecordsPage() {
   const filteredSales = useMemo(() => {
     const q = search.trim().toLowerCase();
     if (!q) return sales;
-    return sales.filter((r) => r.productId.toLowerCase().includes(q) || r.orderTime.includes(q));
-  }, [sales, search]);
+    return sales.filter((r) => {
+      const productCode = r.productId.toLowerCase();
+      const productName = productNameByCode.get(productCode) || '';
+      return productCode.includes(q) || productName.includes(q) || r.orderTime.includes(q);
+    });
+  }, [sales, search, productNameByCode]);
 
   const filteredIncoming = useMemo(() => {
     const q = search.trim().toLowerCase();
     if (!q) return incoming;
-    return incoming.filter((r) => r.productCode.toLowerCase().includes(q) || r.incomingDate.includes(q));
-  }, [incoming, search]);
+    return incoming.filter((r) => {
+      const productCode = r.productCode.toLowerCase();
+      const productName = productNameByCode.get(productCode) || '';
+      return productCode.includes(q) || productName.includes(q) || r.incomingDate.includes(q);
+    });
+  }, [incoming, search, productNameByCode]);
 
   const handleDeleteSale = async (idx: number) => {
     if (!confirm('이 판매 건을 삭제하시겠습니까?')) return;
@@ -76,7 +95,7 @@ export default function RecordsPage() {
       <input
         value={search}
         onChange={(e) => setSearch(e.target.value)}
-        placeholder="제품코드 또는 날짜 검색"
+        placeholder="제품코드/제품명 또는 날짜 검색"
         className="w-full md:w-96 rounded-lg border border-gray-300 dark:border-gray-600 dark:bg-gray-800 dark:text-white px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
       />
 
