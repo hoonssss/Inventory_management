@@ -40,3 +40,11 @@ export interface StockSummary {
 export interface ReorderItem extends StockSummary {
   reorderQty: number;
 }
+
+export interface UploadHistoryRecord {
+  uploadedAt: string;
+  source: 'json' | 'excel';
+  type: 'all' | 'products' | 'productMaster' | 'sales' | 'returns' | 'incoming';
+  count: number;
+  mode?: 'overwrite' | 'merge';
+}
