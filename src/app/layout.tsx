@@ -6,7 +6,7 @@ import './globals.css';
 const siteName = '재관분 | 재고관리분석 웹';
 const siteDescription =
   '재관분은 구매대행, 사입, 사입재고, 물류재고, 카페재고까지 한 번에 관리·분석하는 재고관리분석 웹 서비스입니다.';
-const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? 'https://example.com';
+const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? 'https://inventory-management-orcin-nine-96.vercel.app';
 
 export const metadata: Metadata = {
   metadataBase: new URL(siteUrl),

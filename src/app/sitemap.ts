@@ -1,6 +1,6 @@
 import type { MetadataRoute } from 'next';
 
-const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? 'https://example.com';
+const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? 'https://inventory-management-orcin-nine-96.vercel.app';
 
 const routes = [
   '',
