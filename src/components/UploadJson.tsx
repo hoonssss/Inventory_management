@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useRef } from 'react';
-import { getProducts, setProducts, addSalesRecords, addIncomingRecords } from '@/lib/storage';
+import { getProducts, setProducts, addSalesRecords, addIncomingRecords, addUploadHistory } from '@/lib/storage';
 import { Product, SalesRecord, IncomingRecord } from '@/types/stock';
 
 interface UploadJsonProps {
@@ -68,6 +68,13 @@ export default function UploadJson({ onUploadComplete }: UploadJsonProps) {
         } else {
           await addIncomingRecords(jsonData as IncomingRecord[]);
         }
+
+        await addUploadHistory({
+          uploadedAt: new Date().toISOString(),
+          source: 'json',
+          type: activeTab,
+          count: jsonData.length,
+        });
 
         setMessage(`${jsonData.length}건이 처리되었습니다.`);
         setIsError(false);

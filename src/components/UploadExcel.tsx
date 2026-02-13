@@ -14,7 +14,7 @@ import {
   downloadIncomingTemplate,
   downloadFullTemplate,
 } from '@/lib/excel';
-import { getProducts, setProducts, addSalesRecords, addIncomingRecords } from '@/lib/storage';
+import { getProducts, setProducts, addSalesRecords, addIncomingRecords, addUploadHistory } from '@/lib/storage';
 import { Product } from '@/types/stock';
 
 interface UploadExcelProps {
@@ -106,6 +106,14 @@ export default function UploadExcel({ onUploadComplete }: UploadExcelProps) {
         count = data.length;
       }
 
+      await addUploadHistory({
+        uploadedAt: new Date().toISOString(),
+        source: 'excel',
+        type: activeTab,
+        count,
+        mode: showsProductMode ? productMode : undefined,
+      });
+
       setMessage(`${count}건이 처리되었습니다.`);
       setIsError(false);
       onUploadComplete();
@@ -113,7 +121,7 @@ export default function UploadExcel({ onUploadComplete }: UploadExcelProps) {
       setMessage('엑셀 파일 처리 중 오류가 발생했습니다.');
       setIsError(true);
     }
-  }, [activeTab, productMode, onUploadComplete]);
+  }, [activeTab, productMode, onUploadComplete, showsProductMode]);
 
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];

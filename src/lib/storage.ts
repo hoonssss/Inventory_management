@@ -1,11 +1,12 @@
-import { Product, SalesRecord, IncomingRecord, StockSummary } from '@/types/stock';
+import { Product, SalesRecord, IncomingRecord, StockSummary, UploadHistoryRecord } from '@/types/stock';
 import { getOrderQuantity, getStockDeltaFromSale, normalizeSalesChannel } from '@/lib/sales';
 
 const DB_NAME = 'inventory-db';
-const DB_VERSION = 1;
+const DB_VERSION = 2;
 const PRODUCTS_STORE = 'products';
 const SALES_STORE = 'salesRecords';
 const INCOMING_STORE = 'incomingRecords';
+const UPLOAD_HISTORY_STORE = 'uploadHistory';
 
 let dbPromise: Promise<IDBDatabase> | null = null;
 
@@ -43,6 +44,9 @@ const openDb = (): Promise<IDBDatabase> => {
         }
         if (!db.objectStoreNames.contains(INCOMING_STORE)) {
           db.createObjectStore(INCOMING_STORE, { autoIncrement: true });
+        }
+        if (!db.objectStoreNames.contains(UPLOAD_HISTORY_STORE)) {
+          db.createObjectStore(UPLOAD_HISTORY_STORE, { autoIncrement: true });
         }
       };
       request.onsuccess = () => resolve(request.result);
@@ -153,6 +157,15 @@ export async function addIncomingRecords(records: IncomingRecord[]): Promise<voi
   await addAll(INCOMING_STORE, records);
 }
 
+// --- 업로드 이력 ---
+export async function getUploadHistory(): Promise<UploadHistoryRecord[]> {
+  return getAllFromStore<UploadHistoryRecord>(UPLOAD_HISTORY_STORE);
+}
+
+export async function addUploadHistory(record: UploadHistoryRecord): Promise<void> {
+  await addAll(UPLOAD_HISTORY_STORE, [record]);
+}
+
 // --- 대시보드용 재고 현황 계산 ---
 export async function calculateStockSummary(): Promise<StockSummary[]> {
   const [products, sales, incoming] = await Promise.all([
@@ -241,24 +254,27 @@ export async function deleteIncomingRecord(index: number): Promise<void> {
 export async function clearAllData(): Promise<void> {
   if (!isBrowser()) return;
   const db = await openDb();
-  const tx = db.transaction([PRODUCTS_STORE, SALES_STORE, INCOMING_STORE], 'readwrite');
+  const tx = db.transaction([PRODUCTS_STORE, SALES_STORE, INCOMING_STORE, UPLOAD_HISTORY_STORE], 'readwrite');
   tx.objectStore(PRODUCTS_STORE).clear();
   tx.objectStore(SALES_STORE).clear();
   tx.objectStore(INCOMING_STORE).clear();
+  tx.objectStore(UPLOAD_HISTORY_STORE).clear();
   await transactionComplete(tx);
 }
 
 // --- 전체 백업/복원 ---
 export async function exportFullBackup(): Promise<string> {
-  const [products, salesRecords, incomingRecords] = await Promise.all([
+  const [products, salesRecords, incomingRecords, uploadHistory] = await Promise.all([
     getProducts(),
     getSalesRecords(),
     getIncomingRecords(),
+    getUploadHistory(),
   ]);
   return JSON.stringify({
     products,
     salesRecords,
     incomingRecords,
+    uploadHistory,
   });
 }
 
@@ -277,6 +293,7 @@ export async function importFullBackup(json: string): Promise<{ products: number
   const incomingSource = toRecordArray(data.incomingRecords).length > 0
     ? toRecordArray(data.incomingRecords)
     : toRecordArray(data.incoming);
+  const uploadHistorySource = toRecordArray(data.uploadHistory);
 
   const products = productsSource.map((item) => ({
     productCode: String(item?.productCode || '').trim(),
@@ -299,6 +316,16 @@ export async function importFullBackup(json: string): Promise<{ products: number
     quantity: Number(item?.quantity || 0),
   })).filter((item) => item.productCode && item.incomingDate);
 
+  const uploadHistory = uploadHistorySource.map((item) => ({
+    uploadedAt: String(item?.uploadedAt || '').trim(),
+    source: item?.source === 'excel' ? 'excel' : 'json',
+    type: ['all', 'products', 'productMaster', 'sales', 'returns', 'incoming'].includes(String(item?.type || ''))
+      ? String(item?.type) as UploadHistoryRecord['type']
+      : 'products',
+    count: Number(item?.count || 0),
+    mode: item?.mode === 'merge' ? 'merge' : item?.mode === 'overwrite' ? 'overwrite' : undefined,
+  })).filter((item) => item.uploadedAt);
+
   if (!Array.isArray(data.products) && !Array.isArray(data.salesRecords) && !Array.isArray(data.incomingRecords)
     && !Array.isArray(data.sales) && !Array.isArray(data.incoming)) {
     throw new Error('Invalid backup format');
@@ -308,6 +335,7 @@ export async function importFullBackup(json: string): Promise<{ products: number
     setProducts(products),
     setSalesRecords(sales),
     setIncomingRecords(incoming),
+    clearAndAddAll(UPLOAD_HISTORY_STORE, uploadHistory),
   ]);
   return { products: products.length, sales: sales.length, incoming: incoming.length };
 }
