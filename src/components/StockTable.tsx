@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
 import { StockSummary } from '@/types/stock';
+import { matchesSearchTokens } from '@/lib/search';
 
 interface StockTableProps {
   data: StockSummary[];
@@ -32,17 +33,9 @@ export default function StockTable({ data }: StockTableProps) {
   const [pageSize, setPageSize] = useState(20);
   const [currentPage, setCurrentPage] = useState(1);
 
-  const normalizedQuery = searchQuery.trim().toLowerCase();
-
-  const filteredData = useMemo(() => {
-    if (!normalizedQuery) {
-      return data;
-    }
-    return data.filter((item) =>
-      item.productCode.toLowerCase().includes(normalizedQuery)
-      || (item.productName || '').toLowerCase().includes(normalizedQuery),
-    );
-  }, [data, normalizedQuery]);
+  const filteredData = useMemo(() => (
+    data.filter((item) => matchesSearchTokens(searchQuery, item.productCode, item.productName))
+  ), [data, searchQuery]);
 
   const abcGrades = useMemo(() => {
     const totalSalesSum = data.reduce((sum, item) => sum + item.totalSales, 0) || 1;

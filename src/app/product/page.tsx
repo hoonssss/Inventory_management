@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { getProducts, getSalesRecords, getIncomingRecords, calculateStockSummary, updateProductMemo } from '@/lib/storage';
 import { Product, SalesRecord, IncomingRecord, StockSummary } from '@/types/stock';
 import { getOrderQuantity, normalizeSalesChannel } from '@/lib/sales';
+import { matchesSearchTokens } from '@/lib/search';
 
 interface TimelineEvent {
   date: string;
@@ -44,14 +45,9 @@ export default function ProductDetailPage() {
 
   const selectedProduct = products.find((p) => p.productCode === selectedCode);
   const summary = summaries.find((s) => s.productCode === selectedCode);
-  const filteredProducts = useMemo(() => {
-    const keyword = searchKeyword.trim().toLowerCase();
-    if (!keyword) return products;
-    return products.filter((product) => (
-      product.productCode.toLowerCase().includes(keyword)
-      || (product.productName || '').toLowerCase().includes(keyword)
-    ));
-  }, [products, searchKeyword]);
+  const filteredProducts = useMemo(() => (
+    products.filter((product) => matchesSearchTokens(searchKeyword, product.productCode, product.productName))
+  ), [products, searchKeyword]);
 
   useEffect(() => {
     if (filteredProducts.length === 0) return;
