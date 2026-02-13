@@ -5,6 +5,7 @@ import { calculateStockSummary, getSalesRecords, getIncomingRecords } from '@/li
 import { exportReorderToExcel } from '@/lib/excel';
 import { StockSummary, SalesRecord, IncomingRecord, ReorderItem } from '@/types/stock';
 import { getOrderQuantity, normalizeSalesChannel } from '@/lib/sales';
+import { matchesSearchTokens } from '@/lib/search';
 import StockTable from '@/components/StockTable';
 import Link from 'next/link';
 import {
@@ -66,14 +67,9 @@ export default function DashboardPage() {
   const totalCurrentStock = summary.reduce((sum, d) => sum + d.currentStock, 0);
   const belowTargetCount = summary.filter((d) => d.gap < 0).length;
 
-  const filteredSummary = useMemo(() => {
-    const query = search.trim().toLowerCase();
-    if (!query) return summary;
-    return summary.filter((item) =>
-      item.productCode.toLowerCase().includes(query)
-      || (item.productName || '').toLowerCase().includes(query),
-    );
-  }, [search, summary]);
+  const filteredSummary = useMemo(() => (
+    summary.filter((item) => matchesSearchTokens(search, item.productCode, item.productName))
+  ), [search, summary]);
 
   const filteredProductCodes = useMemo(() => new Set(
     filteredSummary.map((item) => item.productCode),

@@ -5,6 +5,7 @@ import { getProducts, setProducts, clearAllData, clearSalesRecords, clearIncomin
 import { Product } from '@/types/stock';
 import StockForm from '@/components/StockForm';
 import { normalizeSalesChannel } from '@/lib/sales';
+import { matchesSearchTokens } from '@/lib/search';
 
 export default function SettingsPage() {
   const [products, setLocalProducts] = useState<Product[]>([]);
@@ -41,14 +42,9 @@ export default function SettingsPage() {
     setReturnsCount(salesData.filter((record) => normalizeSalesChannel(record.channel) === '반품').length);
   };
 
-  const filteredProducts = useMemo(() => {
-    const query = search.trim().toLowerCase();
-    if (!query) return products;
-    return products.filter((p) =>
-      p.productCode.toLowerCase().includes(query)
-      || (p.productName || '').toLowerCase().includes(query),
-    );
-  }, [products, search]);
+  const filteredProducts = useMemo(() => (
+    products.filter((p) => matchesSearchTokens(search, p.productCode, p.productName))
+  ), [products, search]);
 
   const handleSubmit = async (item: Product) => {
     const current = await getProducts();

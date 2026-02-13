@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { calculateStockSummary, getSalesRecords, getIncomingRecords } from '@/lib/storage';
 import { StockSummary, SalesRecord, IncomingRecord } from '@/types/stock';
 import StockCharts from '@/components/StockCharts';
+import { matchesSearchTokens } from '@/lib/search';
 
 export default function ChartsPage() {
   const [summary, setSummary] = useState<StockSummary[]>([]);
@@ -25,14 +26,9 @@ export default function ChartsPage() {
     void load();
   }, []);
 
-  const filteredSummary = useMemo(() => {
-    const query = search.trim().toLowerCase();
-    if (!query) return summary;
-    return summary.filter((item) => (
-      item.productCode.toLowerCase().includes(query)
-      || item.productName.toLowerCase().includes(query)
-    ));
-  }, [search, summary]);
+  const filteredSummary = useMemo(() => (
+    summary.filter((item) => matchesSearchTokens(search, item.productCode, item.productName))
+  ), [search, summary]);
 
   const productNameByCode = useMemo(() => {
     const map = new Map<string, string>();
@@ -42,25 +38,21 @@ export default function ChartsPage() {
     return map;
   }, [summary]);
 
-  const filteredSales = useMemo(() => {
-    const query = search.trim().toLowerCase();
-    if (!query) return sales;
-    return sales.filter((record) => {
+  const filteredSales = useMemo(() => (
+    sales.filter((record) => {
       const productCode = record.productId.toLowerCase();
       const productName = productNameByCode.get(productCode) || '';
-      return productCode.includes(query) || productName.includes(query);
-    });
-  }, [productNameByCode, search, sales]);
+      return matchesSearchTokens(search, productCode, productName);
+    })
+  ), [productNameByCode, search, sales]);
 
-  const filteredIncoming = useMemo(() => {
-    const query = search.trim().toLowerCase();
-    if (!query) return incoming;
-    return incoming.filter((record) => {
+  const filteredIncoming = useMemo(() => (
+    incoming.filter((record) => {
       const productCode = record.productCode.toLowerCase();
       const productName = productNameByCode.get(productCode) || '';
-      return productCode.includes(query) || productName.includes(query);
-    });
-  }, [incoming, productNameByCode, search]);
+      return matchesSearchTokens(search, productCode, productName);
+    })
+  ), [incoming, productNameByCode, search]);
 
   return (
     <div className="space-y-6">

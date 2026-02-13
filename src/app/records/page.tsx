@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { getSalesRecords, getIncomingRecords, getProducts, deleteSalesRecord, deleteIncomingRecord } from '@/lib/storage';
 import { SalesRecord, IncomingRecord, Product } from '@/types/stock';
 import { getOrderQuantity, normalizeSalesChannel } from '@/lib/sales';
+import { matchesSearchTokens } from '@/lib/search';
 
 type Tab = 'sales' | 'incoming';
 
@@ -40,26 +41,22 @@ export default function RecordsPage() {
     void refresh();
   }, []);
 
-  const filteredSales = useMemo(() => {
-    const q = search.trim().toLowerCase();
-    if (!q) return sales;
-    return sales.filter((r) => {
+  const filteredSales = useMemo(() => (
+    sales.filter((r) => {
       const productCode = r.productId.toLowerCase();
       const productName = (productNameByCode.get(productCode) || '').toLowerCase();
       const channel = normalizeSalesChannel(r.channel).toLowerCase();
-      return productCode.includes(q) || productName.includes(q) || r.orderTime.includes(q) || channel.includes(q);
-    });
-  }, [sales, search, productNameByCode]);
+      return matchesSearchTokens(search, productCode, productName, r.orderTime, channel);
+    })
+  ), [sales, search, productNameByCode]);
 
-  const filteredIncoming = useMemo(() => {
-    const q = search.trim().toLowerCase();
-    if (!q) return incoming;
-    return incoming.filter((r) => {
+  const filteredIncoming = useMemo(() => (
+    incoming.filter((r) => {
       const productCode = r.productCode.toLowerCase();
       const productName = (productNameByCode.get(productCode) || '').toLowerCase();
-      return productCode.includes(q) || productName.includes(q) || r.incomingDate.includes(q);
-    });
-  }, [incoming, search, productNameByCode]);
+      return matchesSearchTokens(search, productCode, productName, r.incomingDate);
+    })
+  ), [incoming, search, productNameByCode]);
 
   const handleDeleteSale = async (idx: number) => {
     if (!confirm('이 판매 건을 삭제하시겠습니까?')) return;
